@@ -35,6 +35,7 @@ Thumbs.db
 # ====== #
 # Manual #
 # ====== #
+*.dll
 p1 - Basic OpenGL/build/
 p1 - Basic OpenGL/windows/
 p2 - Geometry/build/
