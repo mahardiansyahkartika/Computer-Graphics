@@ -13,6 +13,8 @@
 
 #include <vector>
 #include <cassert>
+#include <unordered_map>
+#include <sstream>
 
 namespace _462 {
 
@@ -28,6 +30,18 @@ struct MeshTriangle
 {
     // index into the vertex list of the 3 vertices
     unsigned int vertices[3];
+};
+
+struct Edge
+{	
+	// main vertices
+	unsigned int mainVert[2];
+	// neighbor vertices
+	unsigned int neigVert[2];
+	// is boundary
+	bool isBoundary;
+	// odd vertex index
+	int oddVertexId = -1;
 };
 
 /**
@@ -56,6 +70,9 @@ public:
     bool has_normals;
     int has_colors;
 
+	// additional attributes
+	std::unordered_map<std::string, Edge> edgeMap;
+
     // Loads the model into a list of triangles and vertices.
     bool load();
 
@@ -66,6 +83,14 @@ public:
 
     // Renders the mesh using opengl.
     void render() const;
+
+	// additional functions / procedures
+	void createEdge(int id1, int id2, int idNeighbor);
+	std::string createKey(int id1, int id2);
+	int createOddVertex(std::string key);
+	MeshTriangle createTriangle(int id1, int id2, int id3);
+	void computeNormal();
+
 private:
     typedef std::vector< float > FloatList;
     typedef std::vector< unsigned int > IndexList;
