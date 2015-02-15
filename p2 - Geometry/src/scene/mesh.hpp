@@ -44,6 +44,12 @@ struct Edge
 	int oddVertexId = -1;
 };
 
+struct NeigVertices
+{
+	std::vector<int> neigBoundary;
+	std::vector<int> neigInterior;
+};
+
 /**
  * A mesh of triangles.
  */
@@ -71,8 +77,10 @@ public:
     int has_colors;
 
 	// additional attributes
+	int verticesSize, triangleSize;
 	std::unordered_map<std::string, Edge> edgeMap;
-
+	std::unordered_map<int, NeigVertices> neigMap;
+	
     // Loads the model into a list of triangles and vertices.
     bool load();
 
@@ -88,8 +96,10 @@ public:
 	void createEdge(int id1, int id2, int idNeighbor);
 	std::string createKey(int id1, int id2);
 	int createOddVertex(std::string key);
+	void modifyEvenVertices();
 	MeshTriangle createTriangle(int id1, int id2, int id3);
 	void computeNormal();
+	void createNeigMap();
 
 private:
     typedef std::vector< float > FloatList;

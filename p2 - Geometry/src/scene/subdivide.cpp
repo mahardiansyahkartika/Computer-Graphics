@@ -13,11 +13,14 @@ bool Mesh::subdivide()
       Check mesh.hpp for the Mesh class definition.
 	*/
 
-	int verticesSize = vertices.size();
-	int triangleSize = triangles.size();
+	verticesSize = vertices.size();
+	triangleSize = triangles.size();
+
+	// INIT
+	edgeMap.clear();
+	neigMap.clear();
 
 	// CREATE EDGE
-	edgeMap.clear();
 	// iterate triangle to create edge
 	for (unsigned int i = 0; i < triangleSize; ++i) {
 		// create edges
@@ -46,23 +49,26 @@ bool Mesh::subdivide()
 		int P2 = triangles[i].vertices[1];
 		int P3 = triangles[i].vertices[2];
 
-		// modify ol triangle to be center triangle
+		// modify old triangle to be center triangle
 		triangles[i].vertices[0] = n1;
-		triangles[i].vertices[1] = n2;
-		triangles[i].vertices[2] = n3;
+		triangles[i].vertices[1] = n3;
+		triangles[i].vertices[2] = n2;
 		// add new triangles
-		triangles.push_back(createTriangle(P1, n1, n3));
-		triangles.push_back(createTriangle(P2, n2, n1));
-		triangles.push_back(createTriangle(P3, n3, n2));
+		triangles.push_back(createTriangle(P1, n3, n1));
+		triangles.push_back(createTriangle(P2, n1, n2));
+		triangles.push_back(createTriangle(P3, n2, n3));
 	}
 
+	// find neighbor for every vertices
+	createNeigMap();
+
 	// MODIFY EVEN VERTICES
-	for (unsigned int i = 0; i < verticesSize; ++i) {
-		
-	}
+	modifyEvenVertices();
 
 	// RECALCULATE NORMAL
 	computeNormal();
+
+	create_gl_data();
 
 	return true;
 }
@@ -88,6 +94,22 @@ void Mesh::createEdge(int id1, int id2, int idNeighbor) {
 	}
 }
 
+void Mesh::createNeigMap() {
+	// iterate edge
+	for (auto i = edgeMap.begin(); i != edgeMap.end(); ++i) {
+		Edge edge = i->second;
+		// boundary edge
+		if (edge.isBoundary) {
+			neigMap[edge.mainVert[0]].neigBoundary.push_back(edge.mainVert[1]);
+			neigMap[edge.mainVert[1]].neigBoundary.push_back(edge.mainVert[0]);
+		}
+		else { // interior edge
+			neigMap[edge.mainVert[0]].neigInterior.push_back(edge.mainVert[1]);
+			neigMap[edge.mainVert[1]].neigInterior.push_back(edge.mainVert[0]);
+		}
+	}
+}
+
 int Mesh::createOddVertex(std::string key) {
 	if (edgeMap[key].oddVertexId == -1) {
 		MeshVertex vertex;
@@ -108,6 +130,27 @@ int Mesh::createOddVertex(std::string key) {
 	}
 	
 	return edgeMap[key].oddVertexId;
+}
+
+void Mesh::modifyEvenVertices() {
+	for (unsigned int i = 0; i < verticesSize; ++i) {
+		NeigVertices neigVertices = neigMap[i];
+
+		// boundary
+		if (neigVertices.neigBoundary.size() > 0) {
+			vertices[i].position = (0.75 * vertices[i].position) + (0.125 * (vertices[neigVertices.neigBoundary[0]].position + vertices[neigVertices.neigBoundary[1]].position));
+		}
+		else { // interior
+			double nSize = (double)neigVertices.neigInterior.size();
+			double B = 1.0 / nSize * (0.625 - pow(0.375 + (0.25 * cos(2.0*PI / nSize)), 2));
+
+			Vector3 sumNeig;
+			for (int i = 0; i < (int)nSize; ++i)
+				sumNeig += vertices[neigVertices.neigInterior[i]].position;
+
+			vertices[i].position = ((1.0 - (B * nSize)) * vertices[i].position) + (B * sumNeig);
+		}
+	}
 }
 
 MeshTriangle Mesh::createTriangle(int id1, int id2, int id3) {

@@ -235,7 +235,8 @@ int main( int argc, char* argv[] )
 {
 	argc = 3;
 	argv = new char*[3];
-	argv[1] = "scenes/stegosaurus.scene";
+	//argv[1] = "scenes/stegosaurus.scene";
+	argv[1] = "scenes/cube.scene";
 	argv[2] = "teide";
 
     GlslApplication app;
