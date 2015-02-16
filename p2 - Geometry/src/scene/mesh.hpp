@@ -77,7 +77,7 @@ public:
     int has_colors;
 
 	// additional attributes
-	int verticesSize, triangleSize;
+	unsigned int verticesSize, triangleSize;
 	std::unordered_map<std::string, Edge> edgeMap;
 	std::unordered_map<int, NeigVertices> neigMap;
 	

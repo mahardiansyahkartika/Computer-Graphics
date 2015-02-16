@@ -111,25 +111,27 @@ void Mesh::createNeigMap() {
 }
 
 int Mesh::createOddVertex(std::string key) {
-	if (edgeMap[key].oddVertexId == -1) {
+	Edge &edge = edgeMap[key];
+
+	if (edge.oddVertexId == -1) {
 		MeshVertex vertex;
 		// boundary
-		if (edgeMap[key].isBoundary) {
-			vertex.position = 0.5 * (vertices[edgeMap[key].mainVert[0]].position + vertices[edgeMap[key].mainVert[1]].position);
+		if (edge.isBoundary) {
+			vertex.position = 0.5 * (vertices[edge.mainVert[0]].position + vertices[edge.mainVert[1]].position);
 		}
 		else { // interior
 			vertex.position =
-				(0.375 * (vertices[edgeMap[key].mainVert[0]].position + vertices[edgeMap[key].mainVert[1]].position)) +
-				(0.125 * (vertices[edgeMap[key].neigVert[0]].position + vertices[edgeMap[key].neigVert[1]].position));
+				(0.375 * (vertices[edge.mainVert[0]].position + vertices[edge.mainVert[1]].position)) +
+				(0.125 * (vertices[edge.neigVert[0]].position + vertices[edge.neigVert[1]].position));
 		}
 		// push to vertices
 		vertices.push_back(vertex);
 		// save vertices index
 		int verticesIndex = vertices.size() - 1;
-		edgeMap[key].oddVertexId = verticesIndex;
+		edge.oddVertexId = verticesIndex;
 	}
 	
-	return edgeMap[key].oddVertexId;
+	return edge.oddVertexId;
 }
 
 void Mesh::modifyEvenVertices() {
@@ -174,8 +176,7 @@ MeshTriangle Mesh::createTriangle(int id1, int id2, int id3) {
 
 std::string Mesh::createKey(int id1, int id2) {
 	std::stringstream ss;
-	if (id1 < id2) ss << id1 << '.' << id2;
-	else ss << id2 << '.' << id1;
+	id1 < id2 ? ss << id1 << '.' << id2 : ss << id2 << '.' << id1;
 	return ss.str();
 }
 
@@ -194,9 +195,8 @@ void Mesh::computeNormal() {
 		Vector3 normal = normalize(cross((b - a), (c - a)));
 
 		// assign the normal to the vertices
-		for (unsigned int j = 0; j < 3; j++) {
+		for (unsigned int j = 0; j < 3; j++)
 			vertices[triangles[i].vertices[j]].normal += normal;
-		}
 	}
 
 	// normalize the normal
