@@ -38,6 +38,8 @@ struct Edge
 	unsigned int mainVert[2];
 	// neighbor vertices
 	unsigned int neigVert[2];
+	// triangles
+	unsigned int triangles[2];
 	// is boundary
 	bool isBoundary;
 	// odd vertex index
@@ -78,7 +80,7 @@ public:
 
 	// additional attributes
 	unsigned int verticesSize, triangleSize;
-	std::unordered_map<std::string, Edge> edgeMap;
+	std::unordered_map<double, Edge> edgeMap;
 	std::unordered_map<int, NeigVertices> neigMap;
 	
     // Loads the model into a list of triangles and vertices.
@@ -94,8 +96,8 @@ public:
 
 	// additional functions / procedures
 	void createEdge(int id1, int id2, int idNeighbor);
-	std::string createKey(int id1, int id2);
-	int createOddVertex(std::string key);
+	double createKey(int id1, int id2);
+	int createOddVertex(double key);
 	void modifyEvenVertices();
 	MeshTriangle createTriangle(int id1, int id2, int id3);
 	void computeNormal();

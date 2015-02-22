@@ -75,7 +75,7 @@ bool Mesh::subdivide()
 
 void Mesh::createEdge(int id1, int id2, int idNeighbor) {
 	// create key
-	std::string key = createKey(id1, id2);
+	double key = createKey(id1, id2);
 
 	// create new
 	if (edgeMap.find(key) == edgeMap.end()) {
@@ -110,7 +110,7 @@ void Mesh::createNeigMap() {
 	}
 }
 
-int Mesh::createOddVertex(std::string key) {
+int Mesh::createOddVertex(double key) {
 	Edge &edge = edgeMap[key];
 
 	if (edge.oddVertexId == -1) {
@@ -174,10 +174,8 @@ MeshTriangle Mesh::createTriangle(int id1, int id2, int id3) {
 	return triangle;
 }
 
-std::string Mesh::createKey(int id1, int id2) {
-	std::stringstream ss;
-	id1 < id2 ? ss << id1 << '.' << id2 : ss << id2 << '.' << id1;
-	return ss.str();
+double Mesh::createKey(int id1, int id2) {
+	return ((double) ((id1 + id2) * (id1 + id2) + abs(id1 - id2))) / 2.0;
 }
 
 void Mesh::computeNormal() {
