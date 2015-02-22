@@ -8,6 +8,7 @@
 
 #ifndef _462_SCENE_MESH_HPP_
 #define _462_SCENE_MESH_HPP_
+#define EMPTY -1
 
 #include "math/vector.hpp"
 
@@ -30,20 +31,24 @@ struct MeshTriangle
 {
     // index into the vertex list of the 3 vertices
     unsigned int vertices[3];
+	// index into the edge list
+	unsigned int edges[3];
 };
 
 struct Edge
 {	
 	// main vertices
-	unsigned int mainVert[2];
-	// neighbor vertices
-	unsigned int neigVert[2];
+	int mainVert[2];
+	// neighbour vertices
+	int neigVert[2];
 	// triangles
-	unsigned int triangles[2];
-	// is boundary
-	bool isBoundary;
+	int triangles[2];
+	// children edge index
+	int children[2];
+	// total triangles
+	unsigned int totalTriangles = 0;
 	// odd vertex index
-	int oddVertexId = -1;
+	int oddVertexId = EMPTY;
 };
 
 struct NeigVertices
@@ -79,10 +84,10 @@ public:
     int has_colors;
 
 	// additional attributes
-	unsigned int verticesSize, triangleSize;
-	std::unordered_map<double, Edge> edgeMap;
+	unsigned int verticesSize, triangleSize, edgesSize;
 	std::unordered_map<int, NeigVertices> neigMap;
-	
+	std::vector<Edge> edges;
+
     // Loads the model into a list of triangles and vertices.
     bool load();
 
@@ -95,13 +100,15 @@ public:
     void render() const;
 
 	// additional functions / procedures
-	void createEdge(int id1, int id2, int idNeighbor);
-	double createKey(int id1, int id2);
-	int createOddVertex(double key);
+	void generateFirstEdgeList(); // called once
+	void createEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap);
+	std::string createKey(int id1, int id2);
+
+	void createOddVertices();
+	void divideTriangles();
 	void modifyEvenVertices();
-	MeshTriangle createTriangle(int id1, int id2, int id3);
+	Edge createEdge(int mainVert1, int mainVert2, int neigVert1, int neigVert2, int triangle1, int triangle2, int children1, int children2, unsigned int totalTriangles, int oddVertexId);
 	void computeNormal();
-	void createNeigMap();
 
 private:
     typedef std::vector< float > FloatList;
