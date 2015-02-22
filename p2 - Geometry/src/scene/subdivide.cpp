@@ -22,10 +22,8 @@ bool Mesh::subdivide()
 
 	// generate odd vertices - first pass
 	createOddVertices();
-
 	// divide triangle into 4 new triangles
 	divideTriangles();
-
 	// modify even vertices - second pass
 	modifyEvenVertices();
 
@@ -52,17 +50,13 @@ void Mesh::createOddVertices() {
 			neigMap[edges[i].mainVert[1]].neigBoundary.push_back(edges[i].mainVert[0]);
 		}
 		// interior
-		else if (edges[i].totalTriangles == 2) {
+		else {
 			vertex.position =
 				(0.375 * (vertices[edges[i].mainVert[0]].position + vertices[edges[i].mainVert[1]].position)) +
 				(0.125 * (vertices[edges[i].neigVert[0]].position + vertices[edges[i].neigVert[1]].position));
 			// add neigMap
 			neigMap[edges[i].mainVert[0]].neigInterior.push_back(edges[i].mainVert[1]);
 			neigMap[edges[i].mainVert[1]].neigInterior.push_back(edges[i].mainVert[0]);
-		}
-		else {
-			std::cout << "Error wrong totalTriangles : " << edges[i].totalTriangles << std::endl;
-			return;
 		}
 
 		// save vertices index
@@ -219,11 +213,7 @@ void Mesh::generateFirstEdgeList() {
 			int index;
 			if (createKey(triangle.vertices[0], triangle.vertices[1]) == key) index = 0;
 			else if (createKey(triangle.vertices[1], triangle.vertices[2]) == key) index = 1;
-			else if (createKey(triangle.vertices[2], triangle.vertices[0]) == key) index = 2;
-			else {
-				std::cout << "Error set index triangle" << std::endl;
-				return;
-			}
+			else index = 2;
 			
 			triangles[edge.triangles[j]].edges[index] = edges.size();
 		}
