@@ -101,13 +101,14 @@ public:
 
 	// additional functions / procedures
 	void generateFirstEdgeList(); // called once
-	void createEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap);
+	void generateEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap);
 	std::string createKey(int id1, int id2);
 
 	void createOddVertices();
 	void divideTriangles();
 	void modifyEvenVertices();
 	Edge createEdge(int mainVert1, int mainVert2, int neigVert1, int neigVert2, int triangle1, int triangle2, int children1, int children2, unsigned int totalTriangles, int oddVertexId);
+	MeshTriangle createTriangle(int vertex1, int vertex2, int vertex3, int edge1, int edge2, int edge3);
 	void computeNormal();
 
 private:

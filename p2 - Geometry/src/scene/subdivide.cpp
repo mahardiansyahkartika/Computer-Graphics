@@ -87,21 +87,83 @@ void Mesh::divideTriangles() {
 	// from 1 triangle will create new 3 triangle (1,2,3)
 	// old triangle will be triangle 4
 	//
-	//         P[0]
-	//		   / \
-	//        / 1 \
-	//	   n[2]----n[0]
-	//	    / \ 4 / \
-	//     / 3 \ / 2 \
-	//  P[2]---n[1]---P[1]
+	//          P[0]
+	//    e[0]  / \  e[5]
+	//         / 1 \
+	// 	   n[0]----n[2]
+	//  e[1] / \ 4 / \  e[4]
+	//      / 2 \ / 3 \
+	//   P[1]---n[1]---P[2]
+	//       e[2]   e[3]
 
 	for (unsigned int i = 0; i < triangleSize; ++i) {
 		// odd vertices
 		unsigned int n[] = { edges[triangles[i].edges[0]].oddVertexId, edges[triangles[i].edges[1]].oddVertexId, edges[triangles[i].edges[2]].oddVertexId };
 		// old vertices
 		unsigned int P[] = { triangles[i].vertices[0], triangles[i].vertices[1], triangles[i].vertices[2] };
-		
+		// outer edges
+		unsigned int e[6];
+		for (unsigned int j = 0; j < 3; ++j) {
+			int id1 = 0, id2 = 1;
+			if (P[j] != edges[triangles[i].edges[j]].mainVert[0]) {
+				id1 = 1; id2 = 0;
+			}
+			e[j * 2] = edges[triangles[i].edges[j]].children[id1];
+			e[(j * 2) + 1] = edges[triangles[i].edges[j]].children[id2];
+		}
 
+		// TRIANGLE 1
+		int edgeInside1Idx = edges.size() - edgesSize;
+		Edge edgeInside1 = createEdge(n[2], n[0], P[0], n[1], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
+		MeshTriangle triangle1 = createTriangle(P[0], n[0], n[2], e[0] - edgesSize, edgeInside1Idx, e[5] - edgesSize);
+		// modify outer edges (e[0] & e[5])
+		edges[e[0]].neigVert[edges[e[0]].totalTriangles] = n[2];
+		edges[e[0]].triangles[edges[e[0]].totalTriangles] = triangles.size();
+		edges[e[0]].totalTriangles++;
+		edges[e[5]].neigVert[edges[e[5]].totalTriangles] = n[0];
+		edges[e[5]].triangles[edges[e[5]].totalTriangles] = triangles.size();
+		edges[e[5]].totalTriangles++;
+		// push to vector
+		triangles.push_back(triangle1);
+		edges.push_back(edgeInside1);
+
+		// TRIANGLE 2
+		int edgeInside2Idx = edges.size() - edgesSize;
+		Edge edgeInside2 = createEdge(n[0], n[1], P[1], n[2], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
+		MeshTriangle triangle2 = createTriangle(P[1], n[1], n[0], e[2] - edgesSize, edgeInside2Idx, e[1] - edgesSize);
+		// modify outer edges (e[1] & e[2])
+		edges[e[1]].neigVert[edges[e[1]].totalTriangles] = n[1];
+		edges[e[1]].triangles[edges[e[1]].totalTriangles] = triangles.size();
+		edges[e[1]].totalTriangles++;
+		edges[e[2]].neigVert[edges[e[2]].totalTriangles] = n[0];
+		edges[e[2]].triangles[edges[e[2]].totalTriangles] = triangles.size();
+		edges[e[2]].totalTriangles++;
+		// push to vector
+		triangles.push_back(triangle2);
+		edges.push_back(edgeInside2);
+
+		// TRIANGLE 3
+		int edgeInside3Idx = edges.size() - edgesSize;
+		Edge edgeInside3 = createEdge(n[1], n[2], P[2], n[0], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
+		MeshTriangle triangle3 = createTriangle(P[2], n[2], n[1], e[4] - edgesSize, edgeInside3Idx, e[3] - edgesSize);
+		// modify outer edges (e[3] & e[4])
+		edges[e[3]].neigVert[edges[e[3]].totalTriangles] = n[2];
+		edges[e[3]].triangles[edges[e[3]].totalTriangles] = triangles.size();
+		edges[e[3]].totalTriangles++;
+		edges[e[4]].neigVert[edges[e[4]].totalTriangles] = n[1];
+		edges[e[4]].triangles[edges[e[4]].totalTriangles] = triangles.size();
+		edges[e[4]].totalTriangles++;
+		// push to vector
+		triangles.push_back(triangle3);
+		edges.push_back(edgeInside3);
+
+		// TRIANGLE 4
+		triangles[i].vertices[0] = n[2];
+		triangles[i].vertices[1] = n[0];
+		triangles[i].vertices[2] = n[1];
+		triangles[i].edges[0] = edgeInside1Idx;
+		triangles[i].edges[1] = edgeInside2Idx;
+		triangles[i].edges[2] = edgeInside3Idx;
 	}
 }
 
@@ -141,9 +203,9 @@ void Mesh::generateFirstEdgeList() {
 
 	for (unsigned int i = 0; i < triangles.size(); ++i) {
 		// create edges
-		createEdge(i, triangles[i].vertices[0], triangles[i].vertices[1], triangles[i].vertices[2], edgeMap);
-		createEdge(i, triangles[i].vertices[0], triangles[i].vertices[2], triangles[i].vertices[1], edgeMap);
-		createEdge(i, triangles[i].vertices[1], triangles[i].vertices[2], triangles[i].vertices[0], edgeMap);
+		generateEdge(i, triangles[i].vertices[0], triangles[i].vertices[1], triangles[i].vertices[2], edgeMap);
+		generateEdge(i, triangles[i].vertices[0], triangles[i].vertices[2], triangles[i].vertices[1], edgeMap);
+		generateEdge(i, triangles[i].vertices[1], triangles[i].vertices[2], triangles[i].vertices[0], edgeMap);
 	}
 
 	// convert from hashmap to vector
@@ -171,7 +233,7 @@ void Mesh::generateFirstEdgeList() {
 	}
 }
 
-void Mesh::createEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap) {
+void Mesh::generateEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap) {
 	// create key
 	std::string key = createKey(id1, id2);
 
@@ -197,6 +259,15 @@ Edge Mesh::createEdge(int mainVert1, int mainVert2, int neigVert1, int neigVert2
 	edge.totalTriangles = totalTriangles;
 	edge.oddVertexId = oddVertexId;
 	return edge;
+}
+
+MeshTriangle Mesh::createTriangle(int vertex1, int vertex2, int vertex3, int edge1, int edge2, int edge3) {
+	MeshTriangle triangle;
+
+	triangle.vertices[0] = vertex1; triangle.vertices[1] = vertex2; triangle.vertices[2] = vertex3;
+	triangle.edges[0] = edge1; triangle.edges[1] = edge2; triangle.edges[2] = edge3;
+
+	return triangle;
 }
 
 std::string Mesh::createKey(int id1, int id2) {
