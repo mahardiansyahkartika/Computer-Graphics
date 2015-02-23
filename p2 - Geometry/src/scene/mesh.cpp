@@ -58,7 +58,11 @@ Mesh::Mesh()
     has_colors = 0;
 }
 
-Mesh::~Mesh() { }
+Mesh::~Mesh() { 
+	// freeing memory
+	delete[] edges;
+	delete[] newEdges;
+}
 
 typedef std::vector< Vector3 > PositionList;
 typedef std::vector< Vector3 > NormalList;

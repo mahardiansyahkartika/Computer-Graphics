@@ -84,10 +84,13 @@ public:
     int has_colors;
 
 	// additional attributes
-	unsigned int verticesSize, triangleSize, edgesSize;
-	std::vector<Edge> edges, newEdges;
+	unsigned int verticesSize, triangleSize;
+	int edgesCapacity = 6500000;
+	Edge *edges, *newEdges;
+	unsigned int edgesSize = 0;
+	unsigned int newEdgesSize = 0;
 	double bValues[16]; // store all B number, just 16 possibilities because max neigVert is 16 (teapot2)
-	
+
     // Loads the model into a list of triangles and vertices.
     bool load();
 

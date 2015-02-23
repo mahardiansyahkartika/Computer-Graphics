@@ -4,20 +4,16 @@ namespace _462 {
 
 bool Mesh::subdivide()
 {
-    /*
-      You should implement loop subdivision here.
+	/*
+	You should implement loop subdivision here.
 
-      Triangles are stored in an std::vector<MeshTriangle> in 'triangles'.
-      Vertices are stored in an std::vector<MeshVertex> in 'vertices'.
+	Triangles are stored in an std::vector<MeshTriangle> in 'triangles'.
+	Vertices are stored in an std::vector<MeshVertex> in 'vertices'.
 
-      Check mesh.hpp for the Mesh class definition.
+	Check mesh.hpp for the Mesh class definition.
 	*/
 	verticesSize = vertices.size();
 	triangleSize = triangles.size();
-	edgesSize = edges.size(); // edges (list of edge) created once in mesh.cpp init function
-
-	// clear list
-	newEdges.clear();
 
 	// generate odd vertices - first pass
 	createOddVertices();
@@ -27,7 +23,10 @@ bool Mesh::subdivide()
 	modifyEvenVertices();
 
 	// modify edges
-	edges = newEdges;
+	std::copy(newEdges, newEdges + newEdgesSize, edges);
+	edgesSize = newEdgesSize;
+	// clear newEdge list
+	newEdgesSize = 0;
 
 	// RECALCULATE NORMAL
 	computeNormal();
@@ -80,16 +79,18 @@ void Mesh::createOddVertices() {
 		edges[i].oddVertexId = vertices.size();
 		// push to vertices
 		vertices.push_back(vertex);
-
+		
 		// add children edges. 1 edge will be 2 edges
 		// 1st child
 		Edge firstEdge = createEdge(edges[i].mainVert[0], edges[i].oddVertexId, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, 0, EMPTY);
-		edges[i].children[0] = newEdges.size(); // set child index
-		newEdges.push_back(firstEdge); // push as new edge
+		edges[i].children[0] = newEdgesSize; // set child index
+		newEdges[newEdgesSize] = firstEdge; // push as new edge
+		newEdgesSize++;
 		// 2nd child
 		Edge secondEdge = createEdge(edges[i].oddVertexId, edges[i].mainVert[1], EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, 0, EMPTY);
-		edges[i].children[1] = newEdges.size(); // set child index
-		newEdges.push_back(secondEdge); // push as new edge
+		edges[i].children[1] = newEdgesSize; // set child index
+		newEdges[newEdgesSize] = secondEdge; // push as new edge
+		newEdgesSize++;
 	}
 }
 
@@ -101,7 +102,7 @@ void Mesh::divideTriangles() {
 	//          P[0]
 	//    e[0]  / \  e[5]
 	//         / 1 \
-	// 	   n[0]----n[2]
+	// 	    n[0]----n[2]
 	//  e[1] / \ 4 / \  e[4]
 	//      / 2 \ / 3 \
 	//   P[1]---n[1]---P[2]
@@ -124,7 +125,7 @@ void Mesh::divideTriangles() {
 		}
 
 		// TRIANGLE 1
-		int edgeInside1Idx = newEdges.size();
+		int edgeInside1Idx = newEdgesSize;
 		Edge edgeInside1 = createEdge(n[2], n[0], P[0], n[1], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
 		MeshTriangle triangle1 = createTriangle(P[0], n[0], n[2], e[0], edgeInside1Idx, e[5]);
 		// modify outer edges (e[0] & e[5])
@@ -136,10 +137,11 @@ void Mesh::divideTriangles() {
 		newEdges[e[5]].totalTriangles++;
 		// push to vector
 		triangles.push_back(triangle1);
-		newEdges.push_back(edgeInside1);
+		newEdges[newEdgesSize] = edgeInside1;
+		newEdgesSize++;
 
 		// TRIANGLE 2
-		int edgeInside2Idx = newEdges.size();
+		int edgeInside2Idx = newEdgesSize;
 		Edge edgeInside2 = createEdge(n[0], n[1], P[1], n[2], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
 		MeshTriangle triangle2 = createTriangle(P[1], n[1], n[0], e[2], edgeInside2Idx, e[1]);
 		// modify outer edges (e[1] & e[2])
@@ -151,10 +153,11 @@ void Mesh::divideTriangles() {
 		newEdges[e[2]].totalTriangles++;
 		// push to vector
 		triangles.push_back(triangle2);
-		newEdges.push_back(edgeInside2);
+		newEdges[newEdgesSize] = edgeInside2;
+		newEdgesSize++;
 
 		// TRIANGLE 3
-		int edgeInside3Idx = newEdges.size();
+		int edgeInside3Idx = newEdgesSize;
 		Edge edgeInside3 = createEdge(n[1], n[2], P[2], n[0], triangles.size(), i, EMPTY, EMPTY, 2, EMPTY);
 		MeshTriangle triangle3 = createTriangle(P[2], n[2], n[1], e[4], edgeInside3Idx, e[3]);
 		// modify outer edges (e[3] & e[4])
@@ -166,7 +169,8 @@ void Mesh::divideTriangles() {
 		newEdges[e[4]].totalTriangles++;
 		// push to vector
 		triangles.push_back(triangle3);
-		newEdges.push_back(edgeInside3);
+		newEdges[newEdgesSize] = edgeInside3;
+		newEdgesSize++;
 
 		// TRIANGLE 4
 		triangles[i].vertices[0] = n[2];
@@ -228,7 +232,15 @@ void Mesh::generateFirstEdgeList() {
 		generateEdge(i, triangles[i].vertices[1], triangles[i].vertices[2], triangles[i].vertices[0], edgeMap);
 	}
 
-	// convert from hashmap to vector
+	// allocate memory
+	edges = new Edge[edgesCapacity];
+	newEdges = new Edge[edgesCapacity];
+
+	// reserve memory for vertices avoiding bad allocation, for 6th iteration stegosaurus vertices.size() is around ~2million. I reserve 3million instead
+	// if you iterate more than 6 times in stegosaurus/teapot2, it will error cos I need to reserve more than 3million
+	vertices.reserve(3000000);
+
+	// convert from hashmap to array
 	for (auto i = edgeMap.begin(); i != edgeMap.end(); ++i) {
 		std::string key = i->first;
 		Edge edge = i->second;
@@ -240,12 +252,13 @@ void Mesh::generateFirstEdgeList() {
 			if (createKey(triangle.vertices[0], triangle.vertices[1]) == key) index = 0;
 			else if (createKey(triangle.vertices[1], triangle.vertices[2]) == key) index = 1;
 			else index = 2;
-			
-			triangles[edge.triangles[j]].edges[index] = edges.size();
+
+			triangles[edge.triangles[j]].edges[index] = edgesSize;
 		}
 
 		// push to vector
-		edges.push_back(edge);
+		edges[edgesSize] = edge;
+		edgesSize++;
 	}
 }
 
@@ -295,7 +308,7 @@ std::string Mesh::createKey(int id1, int id2) {
 void Mesh::computeNormal() {
 	// initialize previous normal
 	for (unsigned int i = 0; i < vertices.size(); ++i)
-		vertices[i].normal = {0, 0, 0};
+		vertices[i].normal = { 0, 0, 0 };
 
 	// calculate normal based on triangle
 	for (unsigned int i = 0; i < triangles.size(); ++i) {
