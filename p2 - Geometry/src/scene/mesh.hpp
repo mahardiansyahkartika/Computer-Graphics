@@ -25,12 +25,18 @@ struct MeshVertex
     Vector3 position;
     Vector3 normal;
     Vector2 tex_coord;
+
+	// link to neighbour
+	unsigned int neigMap[16]; // maximum neigVert from all input models are 16 (teapot2)
+	unsigned int totalNeigVert = 0;
+	bool isBoundary = false;
 };
 
 struct MeshTriangle
 {
     // index into the vertex list of the 3 vertices
     unsigned int vertices[3];
+
 	// index into the edge list
 	unsigned int edges[3];
 };
@@ -49,12 +55,6 @@ struct Edge
 	unsigned int totalTriangles = 0;
 	// odd vertex index
 	int oddVertexId = EMPTY;
-};
-
-struct NeigVertices
-{
-	std::vector<int> neigBoundary;
-	std::vector<int> neigInterior;
 };
 
 /**
@@ -85,9 +85,9 @@ public:
 
 	// additional attributes
 	unsigned int verticesSize, triangleSize, edgesSize;
-	std::unordered_map<int, NeigVertices> neigMap;
-	std::vector<Edge> edges;
-
+	std::vector<Edge> edges, newEdges;
+	double bValues[16]; // store all B number, just 16 possibilities because max neigVert is 16 (teapot2)
+	
     // Loads the model into a list of triangles and vertices.
     bool load();
 
@@ -100,10 +100,12 @@ public:
     void render() const;
 
 	// additional functions / procedures
+	double getB(unsigned int nSize);
 	void generateFirstEdgeList(); // called once
 	void generateEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap);
 	std::string createKey(int id1, int id2);
 
+	void addNeigMap(MeshVertex& meshVertex, bool isBoundary, unsigned int val);
 	void createOddVertices();
 	void divideTriangles();
 	void modifyEvenVertices();
