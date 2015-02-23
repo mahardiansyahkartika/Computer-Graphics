@@ -334,8 +334,8 @@ bool Mesh::load()
 	vertices[i].position -= avePos;
     }
 
-	// generate first edge list
-	generateFirstEdgeList();
+	// preparation for subdivision
+	preparation();
 
     std::cout << "Successfully loaded mesh '" << filename << "'.\n";
     return true;

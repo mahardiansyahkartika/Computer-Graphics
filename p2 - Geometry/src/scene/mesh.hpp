@@ -27,7 +27,7 @@ struct MeshVertex
     Vector2 tex_coord;
 
 	// link to neighbour
-	unsigned int neigMap[16]; // maximum neigVert from all input models are 16 (teapot2)
+	unsigned int neigMap[16]; // maximum neigVert(neighbour vertices from one vertex) from all input models are 16 (teapot2)
 	unsigned int totalNeigVert = 0;
 	bool isBoundary = false;
 };
@@ -85,11 +85,12 @@ public:
 
 	// additional attributes
 	unsigned int verticesSize, triangleSize;
-	int edgesCapacity = 6500000;
+	// after 6th iteration on stegosaurus, newEdgesSize for next iteration will be around ~6300000
+	int edgesCapacity = 6400000; // If you do 7th iteration on stegosaurus/teapot2 it will be error because it will need more than 6.4million edge capacity for the next iteration.
 	Edge *edges, *newEdges;
 	unsigned int edgesSize = 0;
 	unsigned int newEdgesSize = 0;
-	double bValues[16]; // store all B number, just 16 possibilities because max neigVert is 16 (teapot2)
+	double bValues[16]; // store all B value to make more efficient, just 16 possibilities because maximum neigVert(neighbour vertices from one vertex) from all input models are 16 (teapot2).
 
     // Loads the model into a list of triangles and vertices.
     bool load();
@@ -103,8 +104,9 @@ public:
     void render() const;
 
 	// additional functions / procedures
+	void preparation(); // prepare everything before subdivision. Called just once in load() function (mesh.cpp)
 	double getB(unsigned int nSize);
-	void generateFirstEdgeList(); // called once
+	void generateFirstEdgeList();
 	void generateEdge(int triangleIndex, int id1, int id2, int idNeighbor, std::unordered_map<std::string, Edge> &edgeMap);
 	std::string createKey(int id1, int id2);
 

@@ -12,8 +12,15 @@ bool Mesh::subdivide()
 
 	Check mesh.hpp for the Mesh class definition.
 	*/
+
 	verticesSize = vertices.size();
 	triangleSize = triangles.size();
+
+	// change edges to new edges
+	std::copy(newEdges, newEdges + newEdgesSize, edges);
+	edgesSize = newEdgesSize;
+	// clear newEdge list
+	newEdgesSize = 0;
 
 	// generate odd vertices - first pass
 	createOddVertices();
@@ -22,13 +29,7 @@ bool Mesh::subdivide()
 	// modify even vertices - second pass
 	modifyEvenVertices();
 
-	// modify edges
-	std::copy(newEdges, newEdges + newEdgesSize, edges);
-	edgesSize = newEdgesSize;
-	// clear newEdge list
-	newEdgesSize = 0;
-
-	// RECALCULATE NORMAL
+	// recalculate normal
 	computeNormal();
 
 	create_gl_data();
@@ -46,31 +47,31 @@ void Mesh::addNeigMap(MeshVertex& meshVertex, bool isBoundary, unsigned int val)
 		meshVertex.neigMap[meshVertex.totalNeigVert] = val;
 		meshVertex.totalNeigVert++;
 	}
-	else if (isBoundary) { // if isBoundary then just add neigVert with boundary neighbour
-		meshVertex.isBoundary = isBoundary;
+	else if (isBoundary) { // if isBoundary and it was assigned with interior neighbour vertices then just add neigVert with boundary neighbour and overwrite interior neighbour
+		meshVertex.isBoundary = true;
 		meshVertex.neigMap[0] = val;
 		meshVertex.totalNeigVert = 1;
 	}
-	// if meshVertex.isBoundary and isBoundary == false then do nothing
+	// if meshVertex.isBoundary == true and isBoundary == false (means interior edge) then do nothing, because boundary vertex just need to store neighbour from other boundary edge not from interior edge
 }
 
 void Mesh::createOddVertices() {
 	for (unsigned int i = 0; i < edgesSize; ++i) {
-		MeshVertex vertex;
+		MeshVertex oddVertex;
 
 		// boundary
 		if (edges[i].totalTriangles == 1) {
-			vertex.position = 0.5 * (vertices[edges[i].mainVert[0]].position + vertices[edges[i].mainVert[1]].position);
-			// add neigMap
+			oddVertex.position = 0.5 * (vertices[edges[i].mainVert[0]].position + vertices[edges[i].mainVert[1]].position);
+			// add neigMap for main vertices
 			addNeigMap(vertices[edges[i].mainVert[0]], true, edges[i].mainVert[1]);
 			addNeigMap(vertices[edges[i].mainVert[1]], true, edges[i].mainVert[0]);
 		}
 		// interior
 		else {
-			vertex.position =
+			oddVertex.position =
 				(0.375 * (vertices[edges[i].mainVert[0]].position + vertices[edges[i].mainVert[1]].position)) +
 				(0.125 * (vertices[edges[i].neigVert[0]].position + vertices[edges[i].neigVert[1]].position));
-			// add neigMap
+			// add neigMap for main vertices
 			addNeigMap(vertices[edges[i].mainVert[0]], false, edges[i].mainVert[1]);
 			addNeigMap(vertices[edges[i].mainVert[1]], false, edges[i].mainVert[0]);
 		}
@@ -78,15 +79,17 @@ void Mesh::createOddVertices() {
 		// save vertices index
 		edges[i].oddVertexId = vertices.size();
 		// push to vertices
-		vertices.push_back(vertex);
+		vertices.push_back(oddVertex);
 		
-		// add children edges. 1 edge will be 2 edges
-		// 1st child
+		// create new edge from this edge. 1 edge will be 2 newEdges
+		// this edge : mv[0]----------------edge----------------mv[1]
+		// new edges : mv[0]----newEdge1----oddV----newEdge2----mv[1]
+		// 1st child (newEdge1)
 		Edge firstEdge = createEdge(edges[i].mainVert[0], edges[i].oddVertexId, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, 0, EMPTY);
 		edges[i].children[0] = newEdgesSize; // set child index
 		newEdges[newEdgesSize] = firstEdge; // push as new edge
 		newEdgesSize++;
-		// 2nd child
+		// 2nd child (newEdge2)
 		Edge secondEdge = createEdge(edges[i].oddVertexId, edges[i].mainVert[1], EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, 0, EMPTY);
 		edges[i].children[1] = newEdgesSize; // set child index
 		newEdges[newEdgesSize] = secondEdge; // push as new edge
@@ -213,6 +216,22 @@ void Mesh::modifyEvenVertices() {
 	delete[] meshVertex;
 }
 
+void Mesh::preparation() {
+	// allocate memory; deallocate on ~Mesh() function.
+	edges = new Edge[edgesCapacity];
+	newEdges = new Edge[edgesCapacity];
+
+	// reserve memory for vertices avoiding failed reallocation. In 6th iteration stegosaurus vertices.size() is around ~2million. I reserve 3million instead
+	vertices.reserve(3000000);
+
+	// store all B values, so we don't need to recalculate every iteration
+	for (unsigned int i = 1; i <= sizeof(bValues) / sizeof(bValues[0]); ++i)
+		bValues[i - 1] = getB(i);
+
+	// generate initial edge list
+	generateFirstEdgeList();
+}
+
 double Mesh::getB(unsigned int nSize) {
 	return (1.0 / nSize) * (0.625 - pow(0.375 + (0.25 * cos(2.0*PI / nSize)), 2));
 }
@@ -220,25 +239,12 @@ double Mesh::getB(unsigned int nSize) {
 void Mesh::generateFirstEdgeList() {
 	std::unordered_map<std::string, Edge> edgeMap;
 
-	// store all B values
-	for (unsigned int i = 1; i <= sizeof(bValues) / sizeof(bValues[0]); ++i) {
-		bValues[i - 1] = getB(i);
-	}
-
 	for (unsigned int i = 0; i < triangles.size(); ++i) {
 		// create edges
 		generateEdge(i, triangles[i].vertices[0], triangles[i].vertices[1], triangles[i].vertices[2], edgeMap);
 		generateEdge(i, triangles[i].vertices[0], triangles[i].vertices[2], triangles[i].vertices[1], edgeMap);
 		generateEdge(i, triangles[i].vertices[1], triangles[i].vertices[2], triangles[i].vertices[0], edgeMap);
 	}
-
-	// allocate memory
-	edges = new Edge[edgesCapacity];
-	newEdges = new Edge[edgesCapacity];
-
-	// reserve memory for vertices avoiding bad allocation, for 6th iteration stegosaurus vertices.size() is around ~2million. I reserve 3million instead
-	// if you iterate more than 6 times in stegosaurus/teapot2, it will error cos I need to reserve more than 3million
-	vertices.reserve(3000000);
 
 	// convert from hashmap to array
 	for (auto i = edgeMap.begin(); i != edgeMap.end(); ++i) {
@@ -253,12 +259,12 @@ void Mesh::generateFirstEdgeList() {
 			else if (createKey(triangle.vertices[1], triangle.vertices[2]) == key) index = 1;
 			else index = 2;
 
-			triangles[edge.triangles[j]].edges[index] = edgesSize;
+			triangles[edge.triangles[j]].edges[index] = newEdgesSize;
 		}
 
-		// push to vector
-		edges[edgesSize] = edge;
-		edgesSize++;
+		// add to array
+		newEdges[newEdgesSize] = edge;
+		newEdgesSize++;
 	}
 }
 
@@ -306,26 +312,25 @@ std::string Mesh::createKey(int id1, int id2) {
 }
 
 void Mesh::computeNormal() {
-	// initialize previous normal
-	for (unsigned int i = 0; i < vertices.size(); ++i)
-		vertices[i].normal = { 0, 0, 0 };
-
-	// calculate normal based on triangle
-	for (unsigned int i = 0; i < triangles.size(); ++i) {
-		// normal vector = (b-a) x (c-a)
-		Vector3 a = vertices[triangles[i].vertices[0]].position;
-		Vector3 b = vertices[triangles[i].vertices[1]].position;
-		Vector3 c = vertices[triangles[i].vertices[2]].position;
-
-		Vector3 normal = normalize(cross((b - a), (c - a)));
-
-		// assign the normal to the vertices
-		for (unsigned int j = 0; j < 3; j++)
-			vertices[triangles[i].vertices[j]].normal += normal;
+	// first zero out
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		vertices[i].normal = Vector3::Zero;
 	}
 
-	// normalize the normal
-	for (unsigned int i = 0; i < vertices.size(); ++i) {
+	// then sum in all triangle normals
+	for (size_t i = 0; i < triangles.size(); ++i) {
+		Vector3 pos[3];
+		for (size_t j = 0; j < 3; ++j) {
+			pos[j] = vertices[triangles[i].vertices[j]].position;
+		}
+		Vector3 normal = normalize(cross(pos[1] - pos[0], pos[2] - pos[0]));
+		for (size_t j = 0; j < 3; ++j) {
+			vertices[triangles[i].vertices[j]].normal += normal;
+		}
+	}
+
+	// then normalize
+	for (size_t i = 0; i < vertices.size(); ++i) {
 		vertices[i].normal = normalize(vertices[i].normal);
 	}
 }
