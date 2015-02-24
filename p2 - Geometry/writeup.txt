@@ -1,5 +1,46 @@
+I have implemented all Required Tasks including Fast subdivision (6th iteration of stegosaurus in around 0.7second)
 
-Describe the required features you have implemented, and which you have not.
-if you have missing features, be sure to explain how much you accomplished.
-You should detail anything you think we need to know to understand your code.
+EDITED SOURCE FILE
+For shader part:
+./shaders/material_frag.glsl
+./src/p2/project.cpp
 
+For subdivision part
+./src/scene/subdivide.cpp
+./src/scene/mesh.hpp
+./src/scene/mesh.cpp
+
+I add Edge data structure and change MeshVertex and MeshTriangle data structure.
+
+Edge is struct which contains 2 main vertices, 2 or 1 neighbour vertices, 2 or 1 triangle(s), 2 index of new edges / children (after subdivide, every edge will be 2 new edges), and index of oddVertex (every edge will create one odd vertex) on vertices list.
+
+For MeshVertex, I added array of neighbour (neigMap) for calculating new vertex position on second pass easily. This is static const array with size of 16. Because after I checked all of the model input, I know that the maximum neighbour vertices from one vertex is 16 (teapot2). Maximum neighbour for stegosaurus model just 12. I added isBoundary attribute to distinct between boundary and interior vertex.
+
+For MeshTriangle, I added list of edges[3]. Every triangle has 3 edges.
+
+I added list of edge (edges[]) and list of new edges (newEdges[]), new edges is list of edge for next iteration. This is array const with size = 6,400,000. I use 6,4million number because after 6th iteration on stegosaurus, newEdges size for next iteration (7th) will be around 6,3million. I use array const instead of vector to make it faster. If you do 7th iteration on stegosaurus/teapot2 it will be overflow because it will need more than 6.4million edge capacity for the next iteration.
+
+Before start subdividing, I create preparation() function which prepare everything before subdivision. I called this function once in load() function in mesh.cpp. preparation() function contains:
++ allocation memory for edges[] and newEdges[]
++ reserve memory for vertices by 3,000,000 because sometimes when push_back new vertex to vertices, vector vertices failed to reallocate and give bad_alloc message. I chose 3million because for 6th iteration stegosaurus vertices.size() is around ~2million.
++ I store all of B values for modifying even vertices. So, I don't need to recalculate every B value for every vertex to make it faster because B value has calculation for square and cosinus which is I think quite expensive. I store this value in array const with size of 16, because like I said before, the maximum neighbour vertices |N| from one vertex is 16 (teapot2).
++ I store all edges information from model into edgeList. 
++ I added edge index information to every triangle.
+
+When subdivide called,
+1. Create Odd Vertices - 1st Pass
++ In this method, I iterate list of edge and create odd vertices in every edge.
++ add neighbour vertices from main vertices in edges
++ create new edge for next iteration. 1 edge will be 2 new edges.
+2. Divide 1 triangle to be 4 new triangles
++ I push_back 3 new triangle into triangles list and modify this old triangle to be the 4th triangle.
++ Updated new edges information such as neighbour vertices and triangles from new edges.
+3. Modify even vertices - 2nd pass
++ I change old vertices position depending on the type (interior or boundary vertex).
+4. Recalculate normal.
+
+So, after subdivide function finish, I will have new triangles list, new vertices list and new edges list which is ready for next iteration.
+
+If you do 7th iteration for stegosaurus and teapot(2) it will overflow because the maximum size of edges is just 6,4million and 7th iteration needs more than that. Moreover, sometimes vertices vector fails to reallocate the capacity.
+
+Result of 6th iteration for stegosaurus is about 0.7second.
