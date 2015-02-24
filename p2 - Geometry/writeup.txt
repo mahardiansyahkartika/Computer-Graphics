@@ -14,7 +14,7 @@ I add Edge data structure and change MeshVertex and MeshTriangle data structure.
 
 Edge is struct which contains 2 main vertices, 2 or 1 neighbour vertices, 2 or 1 triangle(s), 2 index of new edges / children (after subdivide, every edge will be 2 new edges), and index of oddVertex (every edge will create one odd vertex) on vertices list.
 
-For MeshVertex, I added array of neighbour (neigMap) for calculating new vertex position on second pass easily. This is static const array with size of 16. Because after I checked all of the model input, I know that the maximum neighbour vertices from one vertex is 16 (teapot2). Maximum neighbour for stegosaurus model just 12. I added isBoundary attribute to distinct between boundary and interior vertex.
+For MeshVertex, I added array of neighbour (neigMap) for calculating new vertex position on second pass easily. This is static const array with size of 16. Because after I checked all of the model input, I know that the maximum neighbour vertices from one vertex is 16 (teapot2). Maximum neighbour for stegosaurus model just 12. Subdivion process will not change the maximum neighbour vertices from one vertex. I added isBoundary attribute to distinct between boundary and interior vertex.
 
 For MeshTriangle, I added list of edges[3]. Every triangle has 3 edges.
 
