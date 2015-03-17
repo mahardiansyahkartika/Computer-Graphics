@@ -18,6 +18,6 @@ bool Bound::intersects(Ray &ray) const{
     real_t tu2=std::max(t5,t6);
     real_t tl=std::max(std::max(tl0,tl1),tl2);
     real_t tu=std::min(std::min(tu0,tu1),tu2);
-    return tl<tu;
+    return tl<=tu;
 }
 }

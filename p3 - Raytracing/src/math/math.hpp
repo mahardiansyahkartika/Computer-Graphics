@@ -32,7 +32,7 @@ typedef double real_t;
 #endif
 
 // http://en.wikipedia.org/wiki/Gamma_correction
-#define GAMMA 0.5
+#define GAMMA 1.0
 
 class Color3;
 
