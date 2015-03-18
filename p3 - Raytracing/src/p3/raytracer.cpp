@@ -63,7 +63,8 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene/*maybe some more argume
 	if (intersection.t == std::numeric_limits<real_t>::infinity()) {
 		return scene->background_color;
 	} else { // hit object
-		return Color3(1, 1, 1);
+		real_t x = intersection.t / 60.0;
+		return Color3(x , x, x);
 	}
 }
 

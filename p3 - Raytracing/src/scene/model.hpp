@@ -30,6 +30,9 @@ public:
 
     virtual void render() const;
     virtual bool initialize();
+
+	// additional functions
+	Intersection hasHit(Ray& r);
 };
 
 
