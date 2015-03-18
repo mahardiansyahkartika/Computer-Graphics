@@ -26,9 +26,39 @@ class Geometry;
 //represents an intersection between a ray and a geometry
 struct Intersection{
 public:
-	real_t t = std::numeric_limits<real_t>::infinity();
 	const real_t epsilon = 0.001; // slop factor
+	real_t t = std::numeric_limits<real_t>::infinity();
 
+	/// index of closest geometry
+	int index;
+
+	struct MaterialProperties
+	{
+		// ambient color (ignored if refractive_index != 0)
+		Color3 ambient;
+		// diffuse color
+		Color3 diffuse;
+		// specular (reflective) color
+		Color3 specular;
+		// refractive index of material dielectric. 0 is special case for
+		// infinity, i.e. opaque. Any other value means transparent with the
+		// given refractive index.
+		real_t refractive_index;
+		/// texture color
+		Color3 texture;
+	};
+	
+	MeshVertex int_point;
+	MaterialProperties int_material;
+
+	// ray of light
+	Ray ray;
+	Ray instanced_ray;
+
+	// for triangles & models
+	real_t beta;
+	real_t gamma;
+	unsigned int triangle_id = -1;
 private:
 };
 
@@ -73,6 +103,7 @@ public:
 
 	// additional functions
 	virtual Intersection hasHit(Ray& r);
+	virtual void processHit(Intersection& hit);
 };
 
 

@@ -166,8 +166,65 @@ Intersection Sphere::hasHit(Ray& r) {
 	}
 
 	intersection.t = t;
+	intersection.ray = r;
+	intersection.instanced_ray = Ray(e, d);
 
 	return intersection;
+}
+
+void Sphere::processHit(Intersection& hit)
+{
+	/// compute position
+	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
+
+	Vector3 localNormal = hit.instanced_ray.e + (hit.instanced_ray.d*hit.t);
+	Matrix4 normalMatrix;
+	transpose(&normalMatrix, invMat);
+
+	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
+
+	/// compute texture coordinate on sphere
+	hit.int_point.tex_coord = ComputeSphereTextureCoord(hit.int_point.position);
+
+	/// populate the material properties
+	hit.int_material.ambient = material->ambient;
+	hit.int_material.diffuse = material->diffuse;
+	hit.int_material.specular = material->specular;
+	hit.int_material.refractive_index = material->refractive_index;
+
+	int width, height;
+	int pix_x, pix_y;
+	material->get_texture_size(&width, &height);
+	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
+	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
+
+	hit.int_material.texture = material->get_texture_pixel(pix_x, pix_y);
+
+	return;
+}
+
+
+/** ----------------------------------------------------------------------
+* Computes the texture coordinate for point on sphere
+* Mathematical Details: Shirley 11.2 (2D Texture Mapping)
+* @param hitPosition
+*
+* @return
+---------------------------------------------------------------------- */
+Vector2 Sphere::ComputeSphereTextureCoord(Vector3 hitPosition)
+{
+
+	Vector2 tex_coord;
+	real_t theta = acos((hitPosition.z - position.z) / radius);
+	real_t phi =
+		atan2(hitPosition.y - position.y, hitPosition.x - position.x);
+	if (phi < 0)
+		phi = phi + (2 * PI);
+
+	tex_coord.x = phi / (2 * PI);
+	tex_coord.y = (PI - theta) / PI;
+	return tex_coord;
+
 }
 } /* _462 */
 

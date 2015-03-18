@@ -96,8 +96,60 @@ Intersection Model::hasHit(Ray& r) {
 
 		// update intersection
 		closestIntersection.t = t;
+		closestIntersection.beta = beta;
+		closestIntersection.gamma = gamma;
+		closestIntersection.triangle_id = idxTri;
 	}
 
+	closestIntersection.ray = r;
+	closestIntersection.instanced_ray = ray;
+
 	return closestIntersection;
+}
+
+void Model::processHit(Intersection& hit) {
+	// cast the incoming pointer to a local intersection object
+	Intersection thisHit = static_cast<Intersection>(hit);
+	// compute alpha
+	real_t alpha = 1.0 - (thisHit.beta + thisHit.gamma);
+
+	if (mesh == NULL)
+		std::cout << "MESH IS NULL!!!" << std::endl;
+
+	MeshTriangle tri = mesh->triangles[thisHit.triangle_id];
+
+	MeshVertex v_a = mesh->vertices[tri.vertices[0]];
+	MeshVertex v_b = mesh->vertices[tri.vertices[1]];
+	MeshVertex v_c = mesh->vertices[tri.vertices[2]];
+
+	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
+
+	Vector3 localNormal = (alpha*v_a.normal) + (thisHit.beta*v_b.normal) + (thisHit.gamma*v_c.normal);
+
+	Matrix4 normalMatrix;
+	transpose(&normalMatrix, invMat);
+	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
+
+	/// compute the texture coordinate
+	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
+
+	/// store the material details
+	hit.int_material.diffuse = material->diffuse;
+	hit.int_material.ambient = material->ambient;
+	hit.int_material.specular = material->specular;
+	hit.int_material.refractive_index = material->refractive_index;
+
+	int width, height;
+	int pix_x, pix_y;
+	material->get_texture_size(&width, &height);
+	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
+	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
+
+	hit.int_material.texture = material->get_texture_pixel(pix_x, pix_y);
+	
+	//std::cout << "P: " << pix_x << "," << pix_y << " \t" <<width << "," << height << std::endl;
+	//std::cout << hit->int_point.tex_coord.x << "," << hit->int_point.tex_coord.y << " mesh color: " << hit->int_material.texture << std::endl;
+
+	return;
 }
 } /* _462 */

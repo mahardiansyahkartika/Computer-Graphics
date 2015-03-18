@@ -29,6 +29,8 @@ public:
 
 	// additional functions
 	Intersection hasHit(Ray& r);
+	void processHit(Intersection& hit);
+	Vector2 ComputeSphereTextureCoord(Vector3 hitPosition);
 };
 
 } /* _462 */

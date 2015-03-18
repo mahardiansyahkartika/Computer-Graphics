@@ -33,6 +33,7 @@ public:
 
 	// additional functions
 	Intersection hasHit(Ray& r);
+	void processHit(Intersection& hit);
 };
 
 

@@ -34,6 +34,8 @@ Intersection Geometry::hasHit(Ray& r) {
 	return intersection;
 }
 
+void Geometry::processHit(Intersection& hit) {}
+
 SphereLight::SphereLight():
     position(Vector3::Zero()),
     color(Color3::White()),

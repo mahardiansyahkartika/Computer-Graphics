@@ -60,8 +60,15 @@ public:
     Texture texture;
     Texture bump;
 
+	/// puts the dimensions into width and height
+	void get_texture_size(int* width, int* height) const;
+	/**
+	* returns the color of the (x,y) pixel, where
+	* x ranges from [0, width-1] and y ranges from [0, height-1].
+	* Returns white if there is no texture.
+	*/
+	Color3 get_texture_pixel(int x, int y) const;
 private:
-
     // opengl descriptor of the texture
     GLuint tex_handle;
 

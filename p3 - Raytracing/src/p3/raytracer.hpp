@@ -18,6 +18,8 @@
 #include "application/opengl.hpp"
 #include "p3/photonmap.hpp"
 #include "p3/util.hpp"
+#include <stack> 
+
 namespace _462 {
 
 class Scene;
@@ -34,7 +36,7 @@ public:
 
     bool initialize(Scene* scene, size_t num_samples,
                     size_t width, size_t height);
-    Color3 trace_ray(Ray &ray, const Scene* scene/*more args*/);
+	Color3 trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<real_t> refractive_indices/*more args*/);
     
     bool raytrace(unsigned char* buffer, real_t* max_time);
     
@@ -45,7 +47,8 @@ public:
 
 	// additional functions
 	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
-
+	Color3 sampleShadowRays(const Scene* scene, const Intersection intersection);
+	real_t getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, std::pair<real_t, real_t> r_ind);
 private:
     // the scene to trace
     Scene* scene;
