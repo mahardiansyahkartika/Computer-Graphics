@@ -26,6 +26,9 @@ public:
     Sphere();
     virtual ~Sphere();
     virtual void render() const;
+
+	// additional functions
+	Intersection hasHit(Ray& r);
 };
 
 } /* _462 */

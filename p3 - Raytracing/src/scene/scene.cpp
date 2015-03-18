@@ -28,6 +28,12 @@ bool Geometry::initialize()
     make_normal_matrix(&normMat, mat);
     return true;
 }
+
+Intersection Geometry::hasHit(Ray& r) {
+	Intersection intersection;
+	return intersection;
+}
+
 SphereLight::SphereLight():
     position(Vector3::Zero()),
     color(Color3::White()),
@@ -55,7 +61,6 @@ bool Scene::initialize()
         res &= geometries[i]->initialize();
     return res;
 }
-
 
 Geometry* const* Scene::get_geometries() const
 {

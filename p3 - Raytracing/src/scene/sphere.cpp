@@ -128,5 +128,46 @@ real_t solve_time(real_t a,real_t b,real_t c){
     }
     return -1;
 }
+
+// additional functions
+Intersection Sphere::hasHit(Ray& r) {
+	Intersection intersection;
+
+	// inverse e & d point
+	Vector4 iE = invMat * Vector4(r.e.x, r.e.y, r.e.z, 1);
+	Vector4 iD = invMat * Vector4(r.d.x, r.d.y, r.d.z, 0);
+
+	// create ray in the object's local space
+	Vector3 e = Vector3(iE.x, iE.y, iE.z);
+	Vector3 d = Vector3(iD.x, iD.y, iD.z);
+
+	Vector3 c = Vector3(0, 0, 0);
+
+	// compute discriminant
+	// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
+	real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+
+	// no solution
+	if (discriminant < 0) {
+		return intersection;
+	}
+
+	real_t sqrtDiscriminant = sqrt(discriminant);
+	real_t t1, t2, t;
+	t1 = (dot(-d, e - c) + sqrtDiscriminant) / dot(d, d);
+	t2 = (dot(-d, e - c) - sqrtDiscriminant) / dot(d, d);
+
+	// choose the smaller t
+	t = t1;
+	if (t2 < t) t = t2;
+
+	if (t > intersection.t || t < intersection.epsilon) {
+		return intersection;
+	}
+
+	intersection.t = t;
+
+	return intersection;
+}
 } /* _462 */
 

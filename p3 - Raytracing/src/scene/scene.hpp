@@ -25,6 +25,11 @@ class Geometry;
 
 //represents an intersection between a ray and a geometry
 struct Intersection{
+public:
+	real_t t = std::numeric_limits<real_t>::infinity();
+	const real_t epsilon = 0.001; // slop factor
+
+private:
 };
 
 //typedef struct Intersection Intersection;
@@ -65,6 +70,9 @@ public:
     virtual void render() const = 0;
 
     virtual bool initialize();
+
+	// additional functions
+	virtual Intersection hasHit(Ray& r);
 };
 
 

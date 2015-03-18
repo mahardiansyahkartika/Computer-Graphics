@@ -34,7 +34,7 @@ public:
 
     bool initialize(Scene* scene, size_t num_samples,
                     size_t width, size_t height);
-    Color3 trace_ray(Ray &ray/*more args*/);
+    Color3 trace_ray(Ray &ray, const Scene* scene/*more args*/);
     
     bool raytrace(unsigned char* buffer, real_t* max_time);
     
@@ -42,6 +42,9 @@ public:
                size_t y,
                size_t width,
                size_t height);
+
+	// additional functions
+	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
 
 private:
     // the scene to trace

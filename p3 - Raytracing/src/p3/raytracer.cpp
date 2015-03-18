@@ -53,9 +53,18 @@ bool Raytracer::initialize(Scene* scene, size_t num_samples,
     return true;
 }
 //compute ambient lighting
-Color3 Raytracer::trace_ray(Ray &ray/*maybe some more arguments*/){
+Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene/*maybe some more arguments*/){
     //TODO: render something more interesting
-    return Color3(fabs(sin(10*ray.d.x)),fabs(10*cos(ray.d.y)),fabs(10*tan(ray.d.y)));
+	//return Color3(fabs(sin(10 * ray.d.x)), fabs(10 * cos(ray.d.y)), fabs(10 * tan(ray.d.y)));
+
+	// check if ray hits an object in the scene
+	Intersection intersection = raycast(ray, scene);
+
+	if (intersection.t == std::numeric_limits<real_t>::infinity()) {
+		return scene->background_color;
+	} else { // hit object
+		return Color3(1, 1, 1);
+	}
 }
 
 /**
@@ -90,7 +99,7 @@ Color3 Raytracer::trace_pixel(size_t x,
 
         Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
     
-        res += trace_ray(r);
+        res += trace_ray(r, scene);
         // TODO return the color of the given pixel
         // you don't have to use this stub function if you prefer to
         // write your own version of Raytracer::raytrace.
@@ -167,6 +176,28 @@ bool Raytracer::raytrace(unsigned char* buffer, real_t* max_time)
     if (is_done) printf("Done raytracing!\n");
 
     return is_done;
+}
+
+// ---------------------------------------------------------------------------------------------------------------- //
+// --------------------------------------------- ADDITIONAL FUNCTIONS --------------------------------------------- //
+// ---------------------------------------------------------------------------------------------------------------- //
+
+Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
+	// get scene geometries
+	Geometry* const* sceneGeometries = scene->get_geometries();
+	
+	Intersection closestIntersection;
+	// check all for all objects in the scene
+	for (unsigned int i = 0; i < scene->num_geometries(); ++i)
+	{
+		Intersection currIntersection = sceneGeometries[i]->hasHit(ray);
+		// check if this geometry is closer to ray
+		if (currIntersection.t < closestIntersection.t) {
+			closestIntersection.t = currIntersection.t;
+		}
+	}
+
+	return closestIntersection;
 }
 
 } /* _462 */
