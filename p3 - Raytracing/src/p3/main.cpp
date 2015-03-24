@@ -500,7 +500,7 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
     opt->open_window = true;
     opt->width = DEFAULT_WIDTH;
     opt->height = DEFAULT_HEIGHT;
-    opt->num_samples = 16;
+    opt->num_samples = 1;
     for (int i = 2; i < argc; i++)
     {
         switch (argv[i][1])
@@ -540,7 +540,7 @@ int main( int argc, char* argv[] )
 
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "scenes/test.scene";
+	argv[1] = "extra/toy.scene";
 
     Options opt;
 

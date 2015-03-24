@@ -28,7 +28,7 @@ public:
     virtual void render() const;
 
 	// additional functions
-	Intersection hasHit(Ray& r);
+	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
 	Vector2 ComputeSphereTextureCoord(Vector3 hitPosition);
 };

@@ -66,7 +66,7 @@ void Triangle::render() const
 }
 
 // additional functions
-Intersection Triangle::hasHit(Ray& r) {
+Intersection Triangle::getIntersection(Ray& r) {
 	Intersection intersection;
 
 	// inverse e & d point
@@ -98,26 +98,34 @@ Intersection Triangle::hasHit(Ray& r) {
 	double k = vA.position.y - ray.e.y;
 	double l = vA.position.z - ray.e.z;
 
+	// reduce number of operation
+	double ei_minus_hf = (e*i) - (h*f);
+	double gf_minus_di = (g*f) - (d*i);
+	double dh_minus_eg = (d*h) - (e*g);
+	double ak_minus_jb = (a*k) - (j*b);
+	double jc_minus_al = (j*c) - (a*l);
+	double bl_minus_kc = (b*l) - (k*c);
+
 	// M = a(ei - hf) + b(gf - di) + c(dh - eg)
-	double M = (a*((e*i) - (h*f))) + (b*((g*f) - (d*i))) + (c*((d*h) - (e*g)));
+	double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
 
 	// COMPUTE t
 	// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
-	real_t t = -(f*(a*k - j*b) + e*(j*c - a*l) + d*(b*l - k*c)) / M;
+	real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
 	if (t < intersection.epsilon || t > intersection.t) {
 		return intersection;
 	}
 
 	// COMPUTE gamma
 	// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
-	real_t gamma = (i*(a*k - j*b) + h*(j*c - a*l) + g*(b*l - k*c)) / M;
+	real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
 	if (gamma < 0 || gamma > 1) {
 		return intersection;
 	}
 
 	// COMPUTE beta
 	// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
-	real_t beta = (j*(e*i - h*f) + k*(g*f - d*i) + l*(d*h - e*g)) / M;
+	real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
 	if (beta < 0 || beta >(1 - gamma)) {
 		return intersection;
 	}
@@ -130,7 +138,6 @@ Intersection Triangle::hasHit(Ray& r) {
 
 	return intersection;
 }
-
 
 void Triangle::processHit(Intersection& hit) {
 	/// cast the intersection object in the local type
@@ -170,14 +177,12 @@ void Triangle::processHit(Intersection& hit) {
 
 	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
 
-	InterpolateMaterials(hit, alpha, thisHit.beta, thisHit.gamma);
+	interpolateMaterials(hit, alpha, thisHit.beta, thisHit.gamma);
 
 	return;
 }
 
-
-void
-Triangle::InterpolateMaterials(Intersection& hit, real_t alpha, real_t beta, real_t gamma) {
+void Triangle::interpolateMaterials(Intersection& hit, real_t alpha, real_t beta, real_t gamma) {
 	/// Get the triangle vertices
 	Vertex v_a = vertices[0];
 	Vertex v_b = vertices[1];
@@ -208,22 +213,22 @@ Triangle::InterpolateMaterials(Intersection& hit, real_t alpha, real_t beta, rea
 	int pix_x, pix_y;
 
 	/// texture color for vertex a
-	v_a.material->get_texture_size(&width, &height);
+	v_a.material->texture.get_texture_size(&width, &height);
 	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
 	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
-	Color3 a_tex = v_a.material->get_texture_pixel(pix_x, pix_y);
+	Color3 a_tex = v_a.material->texture.get_texture_pixel(pix_x, pix_y);
 
 	/// texture color for vertex b
-	v_b.material->get_texture_size(&width, &height);
+	v_b.material->texture.get_texture_size(&width, &height);
 	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
 	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
-	Color3 b_tex = v_b.material->get_texture_pixel(pix_x, pix_y);
+	Color3 b_tex = v_b.material->texture.get_texture_pixel(pix_x, pix_y);
 
 	/// texture color for vertex c
-	v_c.material->get_texture_size(&width, &height);
+	v_c.material->texture.get_texture_size(&width, &height);
 	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
 	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
-	Color3 c_tex = v_c.material->get_texture_pixel(pix_x, pix_y);
+	Color3 c_tex = v_c.material->texture.get_texture_pixel(pix_x, pix_y);
 
 	/// interpolate the texture colors
 	hit.int_material.texture =

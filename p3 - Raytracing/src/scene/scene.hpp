@@ -53,7 +53,7 @@ public:
 
 	// ray of light
 	Ray ray;
-	Ray instanced_ray;
+	Ray localRay;
 
 	// for triangles & models
 	real_t beta;
@@ -102,8 +102,8 @@ public:
     virtual bool initialize();
 
 	// additional functions
-	virtual Intersection hasHit(Ray& r);
-	virtual void processHit(Intersection& hit);
+	virtual Intersection getIntersection(Ray& r) = 0;
+	virtual void processHit(Intersection& hit) = 0;
 };
 
 

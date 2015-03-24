@@ -32,7 +32,7 @@ public:
     virtual bool initialize();
 
 	// additional functions
-	Intersection hasHit(Ray& r);
+	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
 };
 

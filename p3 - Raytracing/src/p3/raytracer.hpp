@@ -47,7 +47,7 @@ public:
 
 	// additional functions
 	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
-	Color3 sampleShadowRays(const Scene* scene, const Intersection intersection);
+	Color3 shadowRays(const Scene* scene, const Intersection intersection);
 	real_t getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, std::pair<real_t, real_t> r_ind);
 private:
     // the scene to trace

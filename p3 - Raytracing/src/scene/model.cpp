@@ -38,7 +38,7 @@ bool Model::initialize(){
 }
 
 // additional functions
-Intersection Model::hasHit(Ray& r) {
+Intersection Model::getIntersection(Ray& r) {
 	// inverse e & d point
 	Vector4 iE = invMat * Vector4(r.e.x, r.e.y, r.e.z, 1);
 	Vector4 iD = invMat * Vector4(r.d.x, r.d.y, r.d.z, 0);
@@ -70,26 +70,34 @@ Intersection Model::hasHit(Ray& r) {
 		double k = vA.position.y - ray.e.y;
 		double l = vA.position.z - ray.e.z;
 
+		// reduce number of operation
+		double ei_minus_hf = (e*i) - (h*f);
+		double gf_minus_di = (g*f) - (d*i);
+		double dh_minus_eg = (d*h) - (e*g);
+		double ak_minus_jb = (a*k) - (j*b);
+		double jc_minus_al = (j*c) - (a*l);
+		double bl_minus_kc = (b*l) - (k*c);
+
 		// M = a(ei - hf) + b(gf - di) + c(dh - eg)
-		double M = (a*((e*i) - (h*f))) + (b*((g*f) - (d*i))) + (c*((d*h) - (e*g)));
+		double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
 
 		// COMPUTE t
 		// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
-		real_t t = -(f*(a*k - j*b) + e*(j*c - a*l) + d*(b*l - k*c)) / M;
+		real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
 		if (t < closestIntersection.epsilon || t > closestIntersection.t) {
 			continue;
 		}
 
 		// COMPUTE gamma
 		// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
-		real_t gamma = (i*(a*k - j*b) + h*(j*c - a*l) + g*(b*l - k*c)) / M;
+		real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
 		if (gamma < 0 || gamma > 1) {
 			continue;
 		}
 
 		// COMPUTE beta
 		// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
-		real_t beta = (j*(e*i - h*f) + k*(g*f - d*i) + l*(d*h - e*g)) / M;
+		real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
 		if (beta < 0 || beta >(1 - gamma)) {
 			continue;
 		}
@@ -102,7 +110,7 @@ Intersection Model::hasHit(Ray& r) {
 	}
 
 	closestIntersection.ray = r;
-	closestIntersection.instanced_ray = ray;
+	closestIntersection.localRay = ray;
 
 	return closestIntersection;
 }
@@ -141,11 +149,11 @@ void Model::processHit(Intersection& hit) {
 
 	int width, height;
 	int pix_x, pix_y;
-	material->get_texture_size(&width, &height);
+	material->texture.get_texture_size(&width, &height);
 	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
 	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
 
-	hit.int_material.texture = material->get_texture_pixel(pix_x, pix_y);
+	hit.int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
 	
 	//std::cout << "P: " << pix_x << "," << pix_y << " \t" <<width << "," << height << std::endl;
 	//std::cout << hit->int_point.tex_coord.x << "," << hit->int_point.tex_coord.y << " mesh color: " << hit->int_material.texture << std::endl;

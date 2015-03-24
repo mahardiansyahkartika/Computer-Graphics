@@ -34,17 +34,6 @@ bool Material::load()
     return true;
 }
 
-void Material::get_texture_size(int* width, int* height) const
-{
-	assert(width && height);
-	*width = texture.width;
-	*height = texture.height;
-}
-
-Color3 Material::get_texture_pixel(int x, int y) const
-{
-	return texture.data ? Color3(texture.data + 4 * (x + y * texture.width)) : Color3::White();
-}
 
 bool Material::create_gl_data()
 {

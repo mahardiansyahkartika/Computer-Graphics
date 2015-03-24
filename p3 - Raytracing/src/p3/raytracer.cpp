@@ -56,7 +56,6 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
     //TODO: render something more interesting
 	//return Color3(fabs(sin(10 * ray.d.x)), fabs(10 * cos(ray.d.y)), fabs(10 * tan(ray.d.y)));
 
-
 	// check if ray hits an object in the scene
 	Intersection intersection = raycast(ray, scene);
 
@@ -75,149 +74,10 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
 		return scene->background_color;
 	} else { // hit object
 		// DIFFUSE & AMBIENT
-		lightContribution = sampleShadowRays(scene, intersection);
+		lightContribution = shadowRays(scene, intersection);
 
-		/// check for recursion termination condition
-		if (depth > 5) goto colorSummation; // no further recursion necessary
-
-		// REFLECTION
-		/// create a reflected ray
-		intersectionNormal = normalize(intersection.int_point.normal); // dont need to normalize
-
-		incomingDirection = normalize(ray.d);
-
-		reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
-		reflectedRay.e = intersection.int_point.position;
-		reflectedRay.d = reflectionVector;
-
-		/*
-		if (intersection.index == 1)
-		{
-
-		std::cout << "incomingDir: " << incomingDirection
-		<< " normal: " << intersectionNormal
-		<< " reflected: " << reflectionVector
-		<< " n: " << intersection.int_material.refractive_index
-		<< "depth: " << depth
-		<< std::endl;
-		}
-		*/
-
-		/// FRESNEL EFFECT
-		if (intersection.int_material.refractive_index == 0)
-			goto reflection; // opaque object
-
-		/// check for stack corruption
-		if (refractive_indices.size() == 0) {
-			std::cout << "nothing on stack!" << std::endl;
-			return Color3(0.0, 0.0, 0.0);//goto colorSummation;
-		}
-
-		n = refractive_indices.top();
-		n_t = intersection.int_material.refractive_index;
-
-		/// figure out if entering or exiting the medium
-		/// should ideally just be done once: needs to be cleaned out
-		if (dot(incomingDirection, intersectionNormal) > 0)
-		{
-			/// if ray is exiting compute the reflection vector by flipping the normal
-			Vector3 flippedNormal = real_t(-1.0)*intersectionNormal;
-
-			reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, flippedNormal)*flippedNormal));
-			reflectedRay.e = intersection.int_point.position;
-			reflectedRay.d = reflectionVector;
-
-			if ((n != n_t) || (refractive_indices.size() < 2))
-			{
-				/// stack has gotten corrupted
-				/// the last element in stack should be the material exiting
-				/// the one below that is the previously traversed material
-				/*
-				std::cout << "exiting: "
-					<< " stack size: " << refractive_indices.size()
-					<< " n: " << refractive_indices.top()
-					<< " n_t: " << n_t << std::endl;
-				*/
-				return Color3(0.0, 0.0, 0.0);//goto colorSummation;
-			}
-
-			real_t tmp = refractive_indices.top();
-			/// remove the top most element we were travelling through
-			refractive_indices.pop();
-			/// take the refractive index for element we will be returning to
-			n_t = refractive_indices.top();
-
-			/// place the popped element back
-			/// it will be removed if we actually end up refracting
-			refractive_indices.push(tmp);
-
-		}
-
-		/// compute the refracted ray direction: Shirley 10.7
-		squareRootTerm =
-			real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, intersectionNormal), 2)));
-
-		/// randomly pick reflection vs refraction
-		if (squareRootTerm < 0){
-			goto reflection; // Total Internal Reflection
-		}
-
-		outgoingDirection =
-			((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal)))
-			- (intersectionNormal*sqrt(squareRootTerm));
-
-		/*  Ray directions seem to be correct
-		std::cout << "incomingDir: " << incomingDirection
-		<< " normal: " << intersectionNormal
-		<< " outgoing: " << outgoingDirection
-		<< " n: " << n
-		<< " n_t: " << n_t
-		<< std::endl;
-		*/
-		/// normalize outgoing ray
-		outgoingDirection = normalize(outgoingDirection);
-
-		R = getFresnelCoefficient(incomingDirection, outgoingDirection, intersectionNormal, std::make_pair(n, n_t));
-
-		/// Probability: reflection = R, refraction = 1-R
-		if (random_gaussian() < R){
-			//std::cout << "Fresnel Reflection: " << R << std::endl;
-			goto reflection; //Fresnel Reflection
-		}
-
-		//std::cout << "Refracting: " << R << std::endl;
-
-		/// REFRACTION
-		/// entering dielectric
-		if (dot(incomingDirection, intersectionNormal) < 0)
-		{
-			refractive_indices.push(n_t);
-			//std::cout << "Entering dielectric:" << refractive_indices.top() << std::endl;
-		}
-		else /// exiting dielectric
-		{
-			refractive_indices.pop();
-		}
-
-		//std::cout << "Stack size is: " << refractive_indices.size()<< std::endl;
-
-		refractedRay.e = intersection.int_point.position;
-		refractedRay.d = outgoingDirection;
-
-		recursiveContribution = trace_ray(refractedRay, scene, depth + 1, refractive_indices);
-		goto colorSummation;
-
-	reflection:
-		recursiveContribution = trace_ray(reflectedRay, scene, depth + 1, refractive_indices);
-		/// multiply this with specular color of material and texture color
-		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
-
-	colorSummation:
-		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;
 
-		//real_t x = intersection.t / 60.0;
-		//finalColor = Color3(x, x, x);
 		return finalColor;
 	}
 }
@@ -355,10 +215,10 @@ Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	// check all for all objects in the scene
 	for (unsigned int i = 0; i < scene->num_geometries(); ++i)
 	{
-		Intersection currIntersection = sceneGeometries[i]->hasHit(ray);
+		Intersection currIntersection = sceneGeometries[i]->getIntersection(ray);
 		// check if this geometry is closer to ray
 		if (currIntersection.t < (*closestIntersection).t) {
-			closestIntersection = &sceneGeometries[i]->hasHit(ray);
+			closestIntersection = &sceneGeometries[i]->getIntersection(ray);
 			(*closestIntersection).index = i;
 		}
 	}
@@ -370,8 +230,7 @@ Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	return *closestIntersection;
 }
 
-Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection intersection)
-{
+Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection) {
 	// instantitate required diffuse and ambient material/ light colors
 	Color3 k_d = intersection.int_material.diffuse;
 	Color3 k_a = intersection.int_material.ambient;
@@ -384,16 +243,11 @@ Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection inters
 	/// variable to sum over all light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 
-	// fetch all the light sources
-	const SphereLight* sceneLights = scene->get_lights();
-
-	int numSamples = 10; // Monte Carlo
+	int numSamples = 1; // Monte Carlo
 
 	// iterate through the light sources
-	for (unsigned int light_ctr = 0;
-		light_ctr < scene->num_lights(); light_ctr++)
-	{
-		SphereLight currentLight = sceneLights[light_ctr];
+	for (unsigned int i = 0; i < scene->num_lights(); ++i) {
+		SphereLight currentLight = scene->get_lights()[i];
 
 		// store color of light
 		Color3 c = currentLight.color;
@@ -405,17 +259,12 @@ Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection inters
 		// instantiate a color accumulator to add light color contributions
 		Color3 lightAccumulator(0.0, 0.0, 0.0);
 
-		// monte carlo sampling = 10 samples / light
-		for (unsigned int sample_ctr = 0;
-			sample_ctr < numSamples; sample_ctr++)
-		{
+		// monte carlo sampling = numSamples samples / light
+		for (unsigned int j = 0; j < numSamples; ++j) {
 			Vector3 lightSample;
-			lightSample.x = random_gaussian() - 0.50;
-			lightSample.y = random_gaussian() - 0.50;
-			lightSample.z = random_gaussian() - 0.50;
-			/// lightSample.x = random_gaussian();
-			/// lightSample.y = random_gaussian();
-			/// lightSample.z = random_gaussian();
+			lightSample.x = random_gaussian();
+			lightSample.y = random_gaussian();
+			lightSample.z = random_gaussian();
 
 			// normalize the vector
 			lightSample = normalize(lightSample);
@@ -426,8 +275,6 @@ Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection inters
 
 			Vector3 sampleDirection = normalize(lightSample - intersection.int_point.position);
 
-			//lightSample = currentLight.position - intersection.int_point.position;
-
 			// instantiate light ray
 			Ray L = Ray(intersection.int_point.position, sampleDirection);
 
@@ -437,18 +284,8 @@ Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection inters
 			// check for obstruction in path to light
 			Intersection lightIntersection = raycast(L, scene, t_light);
 
-			int intersection_ind = lightIntersection.index;
-
-			/// -------------!!!!!!!!!    HACK :(   !!!!!!!!!------------- ///
-			/*
-			if ( (intersection.index == 2) && (intersection_ind >= 0) )
-			std::cout << "no light, intersected with: "
-			<< intersection_ind
-			<< " after t: " << lightintersection.t << std::endl;
-			*/
-
 			// if the pointer points to a valid intersection container
-			if (intersection_ind >= 0)
+			if (lightIntersection.index >= 0)
 				continue;
 
 			// light is not blocked by any geomtery
@@ -459,15 +296,15 @@ Color3 Raytracer::sampleShadowRays(const Scene* scene, const Intersection inters
 
 			real_t normalDotLight = dot(normal, L.d);
 			if (normalDotLight > 0) {
-				/// sum over all samples sent to a light source
+				// sum over all samples sent to a light source
 				lightAccumulator += (c_i * k_d * normalDotLight);
 			}
 		}
-		/// sum over all lights in scene
+		// sum over all lights in scene
 		avgLightColor += lightAccumulator*(real_t(1.0) / real_t(numSamples));
 	}
 
-	/// average over the various lights in the scene
+	// average over the various lights in the scene
 	avgLightColor = avgLightColor*(real_t(1.0) / real_t(scene->num_lights()));
 
 	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);

@@ -41,9 +41,9 @@ public:
     virtual void render() const;
 
 	// additional functions
-	Intersection hasHit(Ray& r);
+	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
-	void InterpolateMaterials(Intersection& hit, real_t alpha, real_t beta, real_t gamma);
+	void interpolateMaterials(Intersection& hit, real_t alpha, real_t beta, real_t gamma);
 };
 
 
