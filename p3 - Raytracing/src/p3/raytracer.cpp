@@ -201,7 +201,6 @@ bool Raytracer::raytrace(unsigned char* buffer, real_t* max_time)
 // ---------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- ADDITIONAL FUNCTIONS --------------------------------------------- //
 // ---------------------------------------------------------------------------------------------------------------- //
-
 Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	// get scene geometries
 	Geometry* const* sceneGeometries = scene->get_geometries();
@@ -243,14 +242,14 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	/// variable to sum over all light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 
-	int numSamples = 1; // Monte Carlo
+	int numSamples = 10; // Monte Carlo
 
 	// iterate through the light sources
 	for (unsigned int i = 0; i < scene->num_lights(); ++i) {
 		SphereLight currentLight = scene->get_lights()[i];
 
 		// store color of light
-		Color3 c = currentLight.color;
+		Color3 lightColor = currentLight.color;
 		// store attenuation terms
 		real_t a_c = currentLight.attenuation.constant;
 		real_t a_l = currentLight.attenuation.linear;
@@ -260,14 +259,17 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 		Color3 lightAccumulator(0.0, 0.0, 0.0);
 
 		// monte carlo sampling = numSamples samples / light
-		for (unsigned int j = 0; j < numSamples; ++j) {
+		unsigned totalLoop = numSamples;
+
+		while (totalLoop--) {
 			Vector3 lightSample;
-			lightSample.x = random_gaussian();
-			lightSample.y = random_gaussian();
-			lightSample.z = random_gaussian();
+			lightSample.x = random_gaussian() - 0.5;
+			lightSample.y = random_gaussian() - 0.5;
+			lightSample.z = random_gaussian() - 0.5;
 
 			// normalize the vector
 			lightSample = normalize(lightSample);
+
 			// scale the light sample
 			lightSample = (currentLight.radius * lightSample);
 			//transform the light sample
@@ -278,7 +280,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 			// instantiate light ray
 			Ray L = Ray(intersection.int_point.position, sampleDirection);
 
-			/// compute t till the light intersection
+			// compute t till the light intersection
 			real_t t_light = length(lightSample - intersection.int_point.position);
 
 			// check for obstruction in path to light
@@ -292,7 +294,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 			// compute distance to light source
 			real_t d = t_light;
 
-			Color3 c_i = c * (real_t(1.0) / (a_c + (d*a_l) + (pow(d, 2.0)*a_q)));
+			Color3 c_i = lightColor * (real_t(1.0) / (a_c + (d*a_l) + (pow(d, 2.0)*a_q)));
 
 			real_t normalDotLight = dot(normal, L.d);
 			if (normalDotLight > 0) {
@@ -307,45 +309,9 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	// average over the various lights in the scene
 	avgLightColor = avgLightColor*(real_t(1.0) / real_t(scene->num_lights()));
 
-	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
+	//Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
+	Color3 finalLightColor = t_p*(c_a*k_a);
 
 	return finalLightColor;
 }
-
-real_t Raytracer::getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, std::pair<real_t, real_t> r_ind) {
-	/// for sanity: normalize everything
-	incoming = normalize(incoming);
-	outgoing = normalize(outgoing);
-	normal = normalize(normal);
-
-	Vector3 incidenceVector;
-	real_t cos_theta;
-	real_t n_t, n;
-
-	n = r_ind.first;
-	n_t = r_ind.second;
-	cos_theta = dot(incoming, normal);
-
-	/// figure out the ray with larger incidence angle
-	if (dot(incoming, normal) < dot(outgoing, normal))
-	{
-		cos_theta = dot(incoming, normal);
-	}
-	else {
-		cos_theta = dot(outgoing, normal);
-	}
-
-	/// direction does not matter here: take absolute value of angle
-	cos_theta = fabs(cos_theta);
-
-	real_t R_o = pow(((n_t - n) / (n_t + n)), 2);
-
-	real_t R = R_o + ((1.0 - R_o)*pow(1.0 - cos_theta, 5));
-	/*
-	std::cout << "R_o:" << R_o << "\tcos:" << cos_theta << "\tpow:"
-	<< pow(real_t(1.0-cos_theta), 5) << "\tR:" << R << std::endl;
-	*/
-	return R;
-}
-
 } /* _462 */

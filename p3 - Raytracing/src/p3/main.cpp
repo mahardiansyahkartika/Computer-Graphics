@@ -540,7 +540,11 @@ int main( int argc, char* argv[] )
 
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "extra/toy.scene";
+	argv[1] = "scenes/floor.scene";
+
+	int i = 10;
+	while (i--) 
+		std::cout << "sdfa : " << random_gaussian() << std::endl;
 
     Options opt;
 
