@@ -79,7 +79,7 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 		/// check for recursion termination condition
 		if (depth > 3) {
-			std::cout << "EOR" << std::endl;
+			//std::cout << "EOR" << std::endl;
 			goto colorSummation; // no further recursion necessary
 		}
 
