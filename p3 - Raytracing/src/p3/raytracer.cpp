@@ -53,7 +53,7 @@ bool Raytracer::initialize(Scene* scene, size_t num_samples,
 }
 //compute ambient lighting
 Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<real_t> refractive_indices/*maybe some more arguments*/){
-    //TODO: render something more interesting
+	//TODO: render something more interesting
 	//return Color3(fabs(sin(10 * ray.d.x)), fabs(10 * cos(ray.d.y)), fabs(10 * tan(ray.d.y)));
 
 	// check if ray hits an object in the scene
@@ -76,6 +76,130 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
 		// DIFFUSE & AMBIENT
 		lightContribution = shadowRays(scene, intersection);
 
+		/// check for recursion termination condition
+		if (depth > 3) goto colorSummation; // no further recursion necessary
+
+		// REFLECTION
+		/// create a reflected ray
+		intersectionNormal = intersection.int_point.normal;
+
+		incomingDirection = normalize(ray.d);
+
+		reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
+		reflectedRay.e = intersection.int_point.position;
+		reflectedRay.d = reflectionVector;
+
+		/// FRESNEL EFFECT
+		if (intersection.int_material.refractive_index == 0)
+			goto reflection; // opaque object
+
+		/// check for stack corruption
+		if (refractive_indices.size() == 0) {
+			std::cout << "nothing on stack!" << std::endl;
+			return Color3(0.0, 0.0, 0.0);//goto colorSummation;
+		}
+
+		n = refractive_indices.top();
+		n_t = intersection.int_material.refractive_index;
+
+		/// figure out if entering or exiting the medium
+		/// should ideally just be done once: needs to be cleaned out
+		if (dot(incomingDirection, intersectionNormal) > 0)
+		{
+			/// if ray is exiting compute the reflection vector by flipping the normal
+			Vector3 flippedNormal = real_t(-1.0)*intersectionNormal;
+
+			reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, flippedNormal)*flippedNormal));
+			reflectedRay.e = intersection.int_point.position;
+			reflectedRay.d = reflectionVector;
+
+			if ((n != n_t) || (refractive_indices.size() < 2))
+			{
+				/// stack has gotten corrupted
+				/// the last element in stack should be the material exiting
+				/// the one below that is the previously traversed material
+				/*
+				std::cout << "exiting: "
+				<< " stack size: " << refractive_indices.size()
+				<< " n: " << refractive_indices.top()
+				<< " n_t: " << n_t << std::endl;
+				*/
+				return Color3(0.0, 0.0, 0.0);//goto colorSummation;
+			}
+
+			real_t tmp = refractive_indices.top();
+			/// remove the top most element we were travelling through
+			refractive_indices.pop();
+			/// take the refractive index for element we will be returning to
+			n_t = refractive_indices.top();
+
+			/// place the popped element back
+			/// it will be removed if we actually end up refracting
+			refractive_indices.push(tmp);
+
+		}
+
+		/// compute the refracted ray direction: Shirley 10.7
+		squareRootTerm =
+			real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, intersectionNormal), 2)));
+
+		/// randomly pick reflection vs refraction
+		if (squareRootTerm < 0){
+			goto reflection; // Total Internal Reflection
+		}
+
+		outgoingDirection =
+			((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal)))
+			- (intersectionNormal*sqrt(squareRootTerm));
+
+		/*  Ray directions seem to be correct
+		std::cout << "incomingDir: " << incomingDirection
+		<< " normal: " << intersectionNormal
+		<< " outgoing: " << outgoingDirection
+		<< " n: " << n
+		<< " n_t: " << n_t
+		<< std::endl;
+		*/
+		/// normalize outgoing ray
+		outgoingDirection = normalize(outgoingDirection);
+
+		R = getFresnelCoefficient(incomingDirection, outgoingDirection, intersectionNormal, std::make_pair(n, n_t));
+
+		/// Probability: reflection = R, refraction = 1-R
+		if (random_gaussian() < R){
+			//std::cout << "Fresnel Reflection: " << R << std::endl;
+			goto reflection; //Fresnel Reflection
+		}
+
+		//std::cout << "Refracting: " << R << std::endl;
+
+		/// REFRACTION
+		/// entering dielectric
+		if (dot(incomingDirection, intersectionNormal) < 0)
+		{
+			refractive_indices.push(n_t);
+			//std::cout << "Entering dielectric:" << refractive_indices.top() << std::endl;
+		}
+		else /// exiting dielectric
+		{
+			refractive_indices.pop();
+		}
+
+		//std::cout << "Stack size is: " << refractive_indices.size()<< std::endl;
+
+		refractedRay.e = intersection.int_point.position;
+		refractedRay.d = outgoingDirection;
+		
+		recursiveContribution = trace_ray(refractedRay, scene, depth + 1, refractive_indices);
+		goto colorSummation;
+
+	reflection:
+		recursiveContribution = trace_ray(reflectedRay, scene, depth + 1, refractive_indices);
+		/// multiply this with specular color of material and texture color
+		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+
+	colorSummation:
+		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;
 
 		return finalColor;
@@ -309,5 +433,30 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
 
 	return finalLightColor;
+}
+
+real_t Raytracer::getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, std::pair<real_t, real_t> r_ind) {
+	Vector3 incidenceVector;
+	real_t cos_theta;
+	real_t n_t, n;
+
+	n = r_ind.first;
+	n_t = r_ind.second;
+	cos_theta = dot(incoming, normal);
+
+	/// figure out the ray with larger incidence angle
+	if (dot(incoming, normal) < dot(outgoing, normal)) {
+		cos_theta = dot(incoming, normal);
+	} else {
+		cos_theta = dot(outgoing, normal);
+	}
+
+	/// direction does not matter here: take absolute value of angle
+	cos_theta = fabs(cos_theta);
+
+	real_t R_o = pow(((n_t - n) / (n_t + n)), 2);
+	real_t R = R_o + ((1.0 - R_o)*pow(1.0 - cos_theta, 5));
+
+	return R;
 }
 } /* _462 */
