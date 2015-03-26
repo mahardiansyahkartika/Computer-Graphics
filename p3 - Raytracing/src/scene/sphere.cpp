@@ -143,23 +143,20 @@ Intersection Sphere::getIntersection(Ray& r) {
 
 	Vector3 c = Vector3(0, 0, 0);
 
-	// compute discriminant
-	// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
-	real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+	// compute determinant
+	real_t A = dot(d, d);
+	real_t B = 2 * dot(d, e - c);
+	real_t C = dot(e - c, e - c) - pow(radius, 2);
+	// determinant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
+	real_t determinant = (B*B - (4 * A*C));
 
 	// no solution
-	if (discriminant < 0) {
+	if (determinant < 0) {
 		return intersection;
 	}
 
-	real_t sqrtDiscriminant = sqrt(discriminant);
-	real_t t1, t2, t;
-	t1 = (dot(-d, e - c) + sqrtDiscriminant) / dot(d, d);
-	t2 = (dot(-d, e - c) - sqrtDiscriminant) / dot(d, d);
-
 	// choose the smaller t
-	t = t1;
-	if (t2 < t) t = t2;
+	real_t t = solve_time(A, B, C);
 
 	if (t > intersection.t || t < intersection.epsilon) {
 		return intersection;
@@ -178,7 +175,7 @@ void Sphere::processHit(Intersection& hit)
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
-	hit.int_point.normal = normalize(normMat * localNormal);
+	hit.int_point.normal = normalize(normMat * normalize(localNormal));
 
 	// compute texture coordinate on sphere
 	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);
