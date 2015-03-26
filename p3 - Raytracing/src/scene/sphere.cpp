@@ -178,10 +178,7 @@ void Sphere::processHit(Intersection& hit)
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
-	Matrix4 normalMatrix;
-	transpose(&normalMatrix, invMat);
-
-	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
+	hit.int_point.normal = normalize(normMat * localNormal);
 
 	// compute texture coordinate on sphere
 	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);

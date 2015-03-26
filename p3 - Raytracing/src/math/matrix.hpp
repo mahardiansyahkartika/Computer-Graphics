@@ -312,9 +312,6 @@ std::ostream& operator<<( std::ostream& os, const Matrix3& rhs );
 std::ostream& operator<<( std::ostream& os, const Matrix4& rhs );
 Matrix3 row_matrix3(Vector3 a,Vector3 b,Vector3 c);
 
-Vector3 multiplyPoint(const Matrix4& m, const Vector3& point);
-Vector3 multiplyVector(const Matrix4& m, const Vector3& vector);
-void transpose(Matrix4* rv, const Matrix4& m);
 } /* _462 */
 
 #endif /* _462_MATH_MATRIX_HPP_ */

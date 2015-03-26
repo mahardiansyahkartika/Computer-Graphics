@@ -392,40 +392,5 @@ Matrix3 row_matrix3(Vector3 a,Vector3 b,Vector3 c){
     return Matrix3(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
 }
 
-/* Function to multiply a point with a 4x4 transformation matrix */
-Vector3 multiplyPoint(const Matrix4& m, const Vector3& point)
-{
-	Vector4 new_p(point.x, point.y, point.z, 1);
-	new_p = m * new_p;
-	return Vector3(new_p.x, new_p.y, new_p.z);
-}
-
-/* Function to multiply a point with a 4x4 transformation matrix */
-Vector3 multiplyVector(const Matrix4& m, const Vector3& vector)
-{
-	Vector4 new_v(vector.x, vector.y, vector.z, 0);
-	new_v = m * new_v;
-	return Vector3(new_v.x, new_v.y, new_v.z);
-}
-
-void transpose(Matrix4* rv, const Matrix4& m)
-{
-	rv->_m[0][0] = m._m[0][0];
-	rv->_m[0][1] = m._m[1][0];
-	rv->_m[0][2] = m._m[2][0];
-	rv->_m[0][3] = m._m[3][0];
-	rv->_m[1][0] = m._m[0][1];
-	rv->_m[1][1] = m._m[1][1];
-	rv->_m[1][2] = m._m[2][1];
-	rv->_m[1][3] = m._m[3][1];
-	rv->_m[2][0] = m._m[0][2];
-	rv->_m[2][1] = m._m[1][2];
-	rv->_m[2][2] = m._m[2][2];
-	rv->_m[2][3] = m._m[3][2];
-	rv->_m[3][0] = m._m[0][3];
-	rv->_m[3][1] = m._m[1][3];
-	rv->_m[3][2] = m._m[2][3];
-	rv->_m[3][3] = m._m[3][3];
-}
 } /* _462 */
 

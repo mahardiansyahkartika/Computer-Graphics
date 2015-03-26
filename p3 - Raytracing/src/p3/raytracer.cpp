@@ -189,10 +189,9 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
 
 		refractedRay.e = intersection.int_point.position;
 		refractedRay.d = outgoingDirection;
-		
+
 		recursiveContribution = trace_ray(refractedRay, scene, depth + 1, refractive_indices);
 		goto colorSummation;
-
 	reflection:
 		recursiveContribution = trace_ray(reflectedRay, scene, depth + 1, refractive_indices);
 		/// multiply this with specular color of material and texture color
@@ -366,7 +365,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	/// variable to sum over all light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 
-	int numSamples = 10; // Monte Carlo
+	int numSamples = 1; // Monte Carlo
 
 	// iterate through the light sources
 	for (unsigned int i = 0; i < scene->num_lights(); ++i) {

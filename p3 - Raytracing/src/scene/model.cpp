@@ -130,10 +130,7 @@ void Model::processHit(Intersection& hit) {
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = (alpha*v_a.normal) + (thisHit.beta*v_b.normal) + (thisHit.gamma*v_c.normal);
-
-	Matrix4 normalMatrix;
-	transpose(&normalMatrix, invMat);
-	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
+	hit.int_point.normal = normalize(normMat * localNormal);
 
 	/// compute the texture coordinate
 	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);

@@ -159,12 +159,7 @@ void Triangle::processHit(Intersection& hit) {
 
 	//Vector3 localNormal = (alpha*v_a.normal) + (thisHit.beta*v_b.normal) + (thisHit.gamma*v_c.normal);
 	Vector3 localNormal = cross(v_b.position - v_a.position, v_c.position - v_a.position);
-
-	localNormal = normalize(localNormal);
-
-	Matrix4 normalMatrix;
-	transpose(&normalMatrix, invMat);
-	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
+	hit.int_point.normal = normalize(normMat * localNormal);
 
 	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
 

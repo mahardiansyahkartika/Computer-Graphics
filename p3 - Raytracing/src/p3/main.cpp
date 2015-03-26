@@ -540,7 +540,7 @@ int main( int argc, char* argv[] )
 
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "scenes/spheres.scene";
+	argv[1] = "scenes/cornell_box.scene";
 
     Options opt;
 
