@@ -83,48 +83,65 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 			goto colorSummation; // no further recursion necessary
 		}
 
-		// REFLECTION
-		/// create a reflected ray
 		intersectionNormal = intersection.int_point.normal;
 		incomingDirection = normalize(ray.d);
 
-		if (intersection.int_material.refractive_index == 0) { // opaque object
-			reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
-			reflectedRay = Ray(intersection.int_point.position, reflectionVector);
-			
+		if (intersection.int_material.refractive_index == 0) { // opaque object	
 			goto reflection;
 		}
 		// REFRACTION
 		else {
+			bool isOutsideGeometry = false;
 			if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
 				//std::cout << "ENTER" << std::endl;
 				n = scene->refractive_index;
 				n_t = intersection.int_material.refractive_index;
+
+				isOutsideGeometry = true;
 			}
 			else { // exiting dielectric
 				//std::cout << "EXIT" << std::endl;
 				n = intersection.int_material.refractive_index;
 				n_t = scene->refractive_index;
+				// flipped the normal
+				intersectionNormal *= -1;
 			}
 
-			// compute the refracted ray direction: Shirley 13.1
-			squareRootTerm = real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, intersectionNormal), 2)));
-			if (squareRootTerm < 0){
-				//std::cout << "REFLECTION" << std::endl;
-				goto reflection; // Total Internal Reflection
+			// check fresnell
+			if (isOutsideGeometry) {
+				real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
+
+				float randNumber = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				// Probability: reflection = R, refraction = 1-R
+				if (randNumber < R){
+					goto reflection; //Fresnel Reflection
+				}
 			}
 
-			outgoingDirection = ((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal))) - (intersectionNormal*sqrt(squareRootTerm));
-			outgoingDirection = normalize(outgoingDirection);
-			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
+			// compute the refracted ray direction
+			outgoingDirection = refract(intersectionNormal, incomingDirection, n / n_t);
 
-			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
-			goto colorSummation;
+			// Total Internal Reflection
+			if (outgoingDirection == Vector3(0, 0, 0)) {
+				recursiveContribution = intersection.int_material.specular;
+				goto reflection;
+			} else {
+				refractedRay = Ray(intersection.int_point.position, outgoingDirection);
+				recursiveContribution = trace_ray(refractedRay, scene, ++depth);
+				goto colorSummation;
+			}
 		}
 	reflection:
-		//recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
+		// REFLECTION
+		// create a reflected ray
+		reflectionVector = reflect(intersectionNormal, incomingDirection);
+		reflectedRay = Ray(intersection.int_point.position, reflectionVector);
+
+		recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
 		// multiply the returned color by the material's specular color and also by the texture color
-		//recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+		goto colorSummation;
+
 	colorSummation :
 		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;
@@ -293,8 +310,6 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	/// variable to sum over all light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 
-	int numSamples = 1; // Monte Carlo
-
 	// iterate through the light sources
 	for (unsigned int i = 0; i < scene->num_lights(); ++i) {
 		SphereLight currentLight = scene->get_lights()[i];
@@ -305,6 +320,10 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 		real_t a_c = currentLight.attenuation.constant;
 		real_t a_l = currentLight.attenuation.linear;
 		real_t a_q = currentLight.attenuation.quadratic;
+		
+		// Monte Carlo
+		real_t prob = montecarlo(lightColor);
+		unsigned int numSamples = DIRECT_SAMPLE_COUNT*prob / MAX_THREADS;
 
 		// instantiate a color accumulator to add light color contributions
 		Color3 lightAccumulator(0.0, 0.0, 0.0);
@@ -360,22 +379,5 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
 
 	return finalLightColor;
-}
-
-real_t Raytracer::getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, real_t n, real_t n_t) {
-	real_t cos_theta = dot(incoming, normal);
-
-	/// figure out the ray with larger incidence angle
-	if (cos_theta > dot(outgoing, normal)) {
-		cos_theta = dot(outgoing, normal);
-	}
-
-	/// direction does not matter here: take absolute value of angle
-	cos_theta = fabs(cos_theta);
-
-	real_t R_o = pow(((n_t - 1) / (n_t + 1)), 2);
-	real_t R = R_o + ((1.0 - R_o)*pow(1.0 - cos_theta, 5));
-
-	return R;
 }
 } /* _462 */
