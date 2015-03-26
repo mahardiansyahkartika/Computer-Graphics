@@ -28,7 +28,7 @@ Vector3 refract(Vector3 norm, Vector3 inc, real_t ratio) {
 	
 	if (squareRootValue < 0){
 		// Total Internal Reflection
-		return Vector3();
+		return Vector3(0, 0, 0);
 	}
 	// Refraction
 	return normalize((ratio*(inc - norm*dot(inc, norm))) - (norm*sqrt(squareRootValue)));

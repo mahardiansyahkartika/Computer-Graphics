@@ -78,7 +78,7 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 		lightContribution = shadowRays(scene, intersection);
 
 		/// check for recursion termination condition
-		if (depth > 5) {
+		if (depth > 3) {
 			//std::cout << "EOR" << std::endl;
 			goto colorSummation; // no further recursion necessary
 		}
@@ -115,14 +115,21 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 				// Probability: reflection = R, refraction = 1-R
 				if (randNumber < R){
 					goto reflection; //Fresnel Reflection
-				}				
+				}
 			}
 
 			// compute the refracted ray direction
-			outgoingDirection = refract(intersectionNormal, incomingDirection, n / n_t);			
-			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
-			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
-			goto colorSummation;
+			outgoingDirection = refract(intersectionNormal, incomingDirection, n / n_t);
+
+			// Total Internal Reflection
+			if (outgoingDirection == Vector3(0, 0, 0)) {
+				recursiveContribution = intersection.int_material.specular;
+				goto reflection;
+			} else {
+				refractedRay = Ray(intersection.int_point.position, outgoingDirection);
+				recursiveContribution = trace_ray(refractedRay, scene, ++depth);
+				goto colorSummation;
+			}
 		}
 	reflection:
 		// REFLECTION
@@ -316,7 +323,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 		
 		// Monte Carlo
 		real_t prob = montecarlo(lightColor);
-		unsigned int numSamples = 1;// DIRECT_SAMPLE_COUNT*prob / MAX_THREADS;
+		unsigned int numSamples = DIRECT_SAMPLE_COUNT*prob / MAX_THREADS;
 
 		// instantiate a color accumulator to add light color contributions
 		Color3 lightAccumulator(0.0, 0.0, 0.0);
