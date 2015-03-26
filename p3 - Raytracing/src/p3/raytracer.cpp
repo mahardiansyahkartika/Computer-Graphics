@@ -79,27 +79,26 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 		/// check for recursion termination condition
 		if (depth > 3) {
-			std::cout << "EOR" << std::endl;
+			//std::cout << "EOR" << std::endl;
 			goto colorSummation; // no further recursion necessary
 		}
 
 		// REFLECTION
-		/// create a reflected ray
 		intersectionNormal = intersection.int_point.normal;
 		incomingDirection = normalize(ray.d);
 
 		if (intersection.int_material.refractive_index == 0) { // opaque object
-			reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
-			reflectedRay = Ray(intersection.int_point.position, reflectionVector);
-			
 			goto reflection;
 		}
 		// REFRACTION
 		else {
+			bool isOutsideGeometry = false;
 			if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
 				//std::cout << "ENTER" << std::endl;
 				n = scene->refractive_index;
 				n_t = intersection.int_material.refractive_index;
+
+				isOutsideGeometry = true;
 			}
 			else { // exiting dielectric
 				//std::cout << "EXIT" << std::endl;
@@ -107,24 +106,42 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 				n_t = scene->refractive_index;
 			}
 
+			Vector3 normal = intersectionNormal;
+
+			if (isOutsideGeometry) { // check fresnell
+				real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
+
+				float randNumber = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				// Probability: reflection = R, refraction = 1-R
+				if (randNumber < R){
+					goto reflection; //Fresnel Reflection
+				}
+			}
+			else { // inverse normal
+				normal *= -1;
+			}
+
 			// compute the refracted ray direction: Shirley 13.1
-			squareRootTerm = real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, intersectionNormal), 2)));
+			squareRootTerm = real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, normal), 2)));
 			if (squareRootTerm < 0){
 				//std::cout << "REFLECTION" << std::endl;
 				goto reflection; // Total Internal Reflection
 			}
 
-			outgoingDirection = ((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal))) - (intersectionNormal*sqrt(squareRootTerm));
-			outgoingDirection = normalize(outgoingDirection);
+			outgoingDirection = refract(normal, incomingDirection, n / n_t);
 			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
-
 			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
+
 			goto colorSummation;
 		}
 	reflection:
-		//recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
+		// create a reflected ray
+		reflectionVector = reflect(intersectionNormal, incomingDirection);
+		reflectedRay = Ray(intersection.int_point.position, reflectionVector);
+
+		recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
 		// multiply the returned color by the material's specular color and also by the texture color
-		//recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
 	colorSummation :
 		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;
@@ -360,22 +377,5 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
 
 	return finalLightColor;
-}
-
-real_t Raytracer::getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, real_t n, real_t n_t) {
-	real_t cos_theta = dot(incoming, normal);
-
-	/// figure out the ray with larger incidence angle
-	if (cos_theta > dot(outgoing, normal)) {
-		cos_theta = dot(outgoing, normal);
-	}
-
-	/// direction does not matter here: take absolute value of angle
-	cos_theta = fabs(cos_theta);
-
-	real_t R_o = pow(((n_t - 1) / (n_t + 1)), 2);
-	real_t R = R_o + ((1.0 - R_o)*pow(1.0 - cos_theta, 5));
-
-	return R;
 }
 } /* _462 */

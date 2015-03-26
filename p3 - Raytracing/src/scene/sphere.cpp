@@ -144,22 +144,19 @@ Intersection Sphere::getIntersection(Ray& r) {
 	Vector3 c = Vector3(0, 0, 0);
 
 	// compute discriminant
+	real_t A = dot(d, d);
+	real_t B = 2 * dot(d, e - c);
+	real_t C = dot(e - c, e - c) - pow(radius, 2);
 	// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
-	real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+	//real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+	real_t discriminant = (B*B - (4 * A*C));
 
 	// no solution
 	if (discriminant < 0) {
 		return intersection;
 	}
 
-	real_t sqrtDiscriminant = sqrt(discriminant);
-	real_t t1, t2, t;
-	t1 = (dot(-d, e - c) + sqrtDiscriminant) / dot(d, d);
-	t2 = (dot(-d, e - c) - sqrtDiscriminant) / dot(d, d);
-
-	// choose the smaller t
-	t = t1;
-	if (t2 < t) t = t2;
+	real_t t = solve_time(A, B, C);
 
 	if (t > intersection.t || t < intersection.epsilon) {
 		return intersection;

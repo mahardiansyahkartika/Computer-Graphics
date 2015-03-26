@@ -48,7 +48,6 @@ public:
 	// additional functions
 	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
 	Color3 shadowRays(const Scene* scene, const Intersection intersection);
-	real_t getFresnelCoefficient(Vector3 incoming, Vector3 outgoing, Vector3 normal, real_t n, real_t n_t);
 private:
     // the scene to trace
     Scene* scene;
