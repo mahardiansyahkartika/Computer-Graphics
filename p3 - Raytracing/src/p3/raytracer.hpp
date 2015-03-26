@@ -36,7 +36,7 @@ public:
 
     bool initialize(Scene* scene, size_t num_samples,
                     size_t width, size_t height);
-	Color3 trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<real_t> refractive_indices/*more args*/);
+	Color3 trace_ray(Ray &ray, const Scene* scene, int depth/*more args*/);
     
     bool raytrace(unsigned char* buffer, real_t* max_time);
     

@@ -1,12 +1,12 @@
 /**
- * @file raytacer.cpp
- * @brief Raytracer class
- *
- * Implement these functions for project 4.
- *
- * @author H. Q. Bovik (hqbovik)
- * @bug Unimplemented
- */
+* @file raytacer.cpp
+* @brief Raytracer class
+*
+* Implement these functions for project 4.
+*
+* @author H. Q. Bovik (hqbovik)
+* @bug Unimplemented
+*/
 
 #include "raytracer.hpp"
 #include "scene/scene.hpp"
@@ -20,39 +20,39 @@ static const unsigned STEP_SIZE = 1;
 static const unsigned CHUNK_SIZE = 1;
 
 Raytracer::Raytracer() {
-        scene = 0;
-        width = 0;
-        height = 0;
-    }
+	scene = 0;
+	width = 0;
+	height = 0;
+}
 
 Raytracer::~Raytracer() { }
 
 /**
- * Initializes the raytracer for the given scene. Overrides any previous
- * initializations. May be invoked before a previous raytrace completes.
- * @param scene The scene to raytrace.
- * @param width The width of the image being raytraced.
- * @param height The height of the image being raytraced.
- * @return true on success, false on error. The raytrace will abort if
- *  false is returned.
- */
+* Initializes the raytracer for the given scene. Overrides any previous
+* initializations. May be invoked before a previous raytrace completes.
+* @param scene The scene to raytrace.
+* @param width The width of the image being raytraced.
+* @param height The height of the image being raytraced.
+* @return true on success, false on error. The raytrace will abort if
+*  false is returned.
+*/
 bool Raytracer::initialize(Scene* scene, size_t num_samples,
-               size_t width, size_t height)
+	size_t width, size_t height)
 {
-    this->scene = scene;
-    this->num_samples = num_samples;
-    this->width = width;
-    this->height = height;
+	this->scene = scene;
+	this->num_samples = num_samples;
+	this->width = width;
+	this->height = height;
 
-    current_row = 0;
+	current_row = 0;
 
-    projector.init(scene->camera);
-    scene->initialize();
-    photonMap.initialize(scene);
-    return true;
+	projector.init(scene->camera);
+	scene->initialize();
+	photonMap.initialize(scene);
+	return true;
 }
 //compute ambient lighting
-Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<real_t> refractive_indices/*maybe some more arguments*/){
+Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some more arguments*/){
 	//TODO: render something more interesting
 	//return Color3(fabs(sin(10 * ray.d.x)), fabs(10 * cos(ray.d.y)), fabs(10 * tan(ray.d.y)));
 
@@ -72,55 +72,60 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
 
 	if (intersection.t == std::numeric_limits<real_t>::infinity()) {
 		return scene->background_color;
-	} else { // hit object
+	}
+	else { // hit object
 		// DIFFUSE & AMBIENT
 		lightContribution = shadowRays(scene, intersection);
 
 		/// check for recursion termination condition
-		if (depth > 3) goto colorSummation; // no further recursion necessary
+		if (depth > 3) {
+			std::cout << "EOR" << std::endl;
+			goto colorSummation; // no further recursion necessary
+		}
 
 		// REFLECTION
 		/// create a reflected ray
 		intersectionNormal = intersection.int_point.normal;
 		incomingDirection = normalize(ray.d);
-		reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
-		
-		reflectedRay = Ray(intersection.int_point.position, reflectionVector);
 
 		if (intersection.int_material.refractive_index == 0) { // opaque object
+			reflectionVector = normalize(incomingDirection - (2 * dot(incomingDirection, intersectionNormal)*intersectionNormal));
+			reflectedRay = Ray(intersection.int_point.position, reflectionVector);
+			
 			goto reflection;
-		} 
+		}
 		// REFRACTION
-		else {	
-			if (refractive_indices.size() > 0) { // from air to object
-				n = refractive_indices.top();
+		else {
+			if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
+				//std::cout << "ENTER" << std::endl;
+				n = scene->refractive_index;
 				n_t = intersection.int_material.refractive_index;
-				refractive_indices.pop();
-			} else { // from object to air
+			}
+			else { // exiting dielectric
+				//std::cout << "EXIT" << std::endl;
 				n = intersection.int_material.refractive_index;
 				n_t = scene->refractive_index;
-				refractive_indices.push(scene->refractive_index);
 			}
 
-			/// compute the refracted ray direction: Shirley 13.1
+			// compute the refracted ray direction: Shirley 13.1
 			squareRootTerm = real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, intersectionNormal), 2)));
-			// Total Internal Reflection
 			if (squareRootTerm < 0){
-				goto reflection; 
+				//std::cout << "REFLECTION" << std::endl;
+				goto reflection; // Total Internal Reflection
 			}
 
-			outgoingDirection = normalize(((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal))) - (intersectionNormal*sqrt(squareRootTerm)));
+			outgoingDirection = ((n / n_t)*(incomingDirection - intersectionNormal*dot(incomingDirection, intersectionNormal))) - (intersectionNormal*sqrt(squareRootTerm));
+			outgoingDirection = normalize(outgoingDirection);
 			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
 
-			recursiveContribution = trace_ray(refractedRay, scene, depth + 1, refractive_indices);
+			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
 			goto colorSummation;
 		}
 	reflection:
-		recursiveContribution = trace_ray(reflectedRay, scene, depth + 1, refractive_indices);
+		//recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
 		// multiply the returned color by the material's specular color and also by the texture color
-		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
-
-	colorSummation:
+		//recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+	colorSummation :
 		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;
 
@@ -129,119 +134,119 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth, std::stack<
 }
 
 /**
- * Performs a raytrace on the given pixel on the current scene.
- * The pixel is relative to the bottom-left corner of the image.
- * @param scene The scene to trace.
- * @param x The x-coordinate of the pixel to trace.
- * @param y The y-coordinate of the pixel to trace.
- * @param width The width of the screen in pixels.
- * @param height The height of the screen in pixels.
- * @return The color of that pixel in the final image.
- */
+* Performs a raytrace on the given pixel on the current scene.
+* The pixel is relative to the bottom-left corner of the image.
+* @param scene The scene to trace.
+* @param x The x-coordinate of the pixel to trace.
+* @param y The y-coordinate of the pixel to trace.
+* @param width The width of the screen in pixels.
+* @param height The height of the screen in pixels.
+* @return The color of that pixel in the final image.
+*/
 Color3 Raytracer::trace_pixel(size_t x,
-                  size_t y,
-                  size_t width,
-                  size_t height)
+	size_t y,
+	size_t width,
+	size_t height)
 {
-    assert(x < width);
-    assert(y < height);
+	assert(x < width);
+	assert(y < height);
 
-    real_t dx = real_t(1)/width;
-    real_t dy = real_t(1)/height;
+	real_t dx = real_t(1) / width;
+	real_t dy = real_t(1) / height;
 
-    Color3 res = Color3::Black();
+	Color3 res = Color3::Black();
 
 	/// stack container to keep track of refractive indices
 	std::stack<real_t> refractive_indices;
 	refractive_indices.push(scene->refractive_index);
 
-    unsigned int iter;
-    for (iter = 0; iter < num_samples; iter++)
-    {
-        // pick a point within the pixel boundaries to fire our
-        // ray through.
-        real_t i = real_t(2)*(real_t(x)+random_uniform())*dx - real_t(1);
-        real_t j = real_t(2)*(real_t(y) + random_uniform())*dy - real_t(1);
+	unsigned int iter;
+	for (iter = 0; iter < num_samples; iter++)
+	{
+		// pick a point within the pixel boundaries to fire our
+		// ray through.
+		real_t i = real_t(2)*(real_t(x) + random_uniform())*dx - real_t(1);
+		real_t j = real_t(2)*(real_t(y) + random_uniform())*dy - real_t(1);
 
-        Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
-    
-		res += trace_ray(r, scene, 0, refractive_indices);
-        // TODO return the color of the given pixel
-        // you don't have to use this stub function if you prefer to
-        // write your own version of Raytracer::raytrace.
+		Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
 
-    }
-    return res*(real_t(1)/num_samples);
+		res += trace_ray(r, scene, 0);
+		// TODO return the color of the given pixel
+		// you don't have to use this stub function if you prefer to
+		// write your own version of Raytracer::raytrace.
+
+	}
+	return res*(real_t(1) / num_samples);
 }
 
 /**
- * Raytraces some portion of the scene. Should raytrace for about
- * max_time duration and then return, even if the raytrace is not copmlete.
- * The results should be placed in the given buffer.
- * @param buffer The buffer into which to place the color data. It is
- *  32-bit RGBA (4 bytes per pixel), in row-major order.
- * @param max_time, If non-null, the maximum suggested time this
- *  function raytrace before returning, in seconds. If null, the raytrace
- *  should run to completion.
- * @return true if the raytrace is complete, false if there is more
- *  work to be done.
- */
+* Raytraces some portion of the scene. Should raytrace for about
+* max_time duration and then return, even if the raytrace is not copmlete.
+* The results should be placed in the given buffer.
+* @param buffer The buffer into which to place the color data. It is
+*  32-bit RGBA (4 bytes per pixel), in row-major order.
+* @param max_time, If non-null, the maximum suggested time this
+*  function raytrace before returning, in seconds. If null, the raytrace
+*  should run to completion.
+* @return true if the raytrace is complete, false if there is more
+*  work to be done.
+*/
 bool Raytracer::raytrace(unsigned char* buffer, real_t* max_time)
 {
-    
-    static const size_t PRINT_INTERVAL = 64;
 
-    // the time in milliseconds that we should stop
-    unsigned int end_time = 0;
-    bool is_done;
+	static const size_t PRINT_INTERVAL = 64;
 
-    if (max_time)
-    {
-        // convert duration to milliseconds
-        unsigned int duration = (unsigned int) (*max_time * 1000);
-        end_time = SDL_GetTicks() + duration;
-    }
+	// the time in milliseconds that we should stop
+	unsigned int end_time = 0;
+	bool is_done;
 
-    // until time is up, run the raytrace. we render an entire group of
-    // rows at once for simplicity and efficiency.
-    for (; !max_time || end_time > SDL_GetTicks(); current_row += STEP_SIZE)
-    {
-        // we're done if we finish the last row
-        is_done = current_row >= height;
-        // break if we finish
-        if (is_done) break;
+	if (max_time)
+	{
+		// convert duration to milliseconds
+		unsigned int duration = (unsigned int)(*max_time * 1000);
+		end_time = SDL_GetTicks() + duration;
+	}
 
-        int loop_upper = std::min(current_row + STEP_SIZE, height);
+	// until time is up, run the raytrace. we render an entire group of
+	// rows at once for simplicity and efficiency.
+	for (; !max_time || end_time > SDL_GetTicks(); current_row += STEP_SIZE)
+	{
+		// we're done if we finish the last row
+		is_done = current_row >= height;
+		// break if we finish
+		if (is_done) break;
 
-        for (int c_row = current_row; c_row < loop_upper; c_row++)
-        {
-            /*
-             * This defines a critical region of code that should be
-             * executed sequentially.
-             */
+		int loop_upper = std::min(current_row + STEP_SIZE, height);
+
+		for (int c_row = current_row; c_row < loop_upper; c_row++)
+		{
+			/*
+			* This defines a critical region of code that should be
+			* executed sequentially.
+			*/
 #pragma omp critical
-            {
-                if (c_row % PRINT_INTERVAL == 0)
-                    printf("Raytracing (Row %d)\n", c_row);
-            }
-            
-        // This tells OpenMP that this loop can be parallelized.
+		{
+			if (c_row % PRINT_INTERVAL == 0)
+				printf("Raytracing (Row %d)\n", c_row);
+		}
+
+		// This tells OpenMP that this loop can be parallelized.
 #pragma omp parallel for schedule(dynamic, CHUNK_SIZE)
-            for (int x = 0; x < width; x++)
-            {
-                // trace a pixel
-                Color3 color = trace_pixel(x, c_row, width, height);
-                // write the result to the buffer, always use 1.0 as the alpha
-                color.to_array4(&buffer[4 * (c_row * width + x)]);
-            }
+		for (int x = 0; x < width; x++)
+		{
+			// trace a pixel
+			Color3 color = trace_pixel(x, c_row, width, height);
+			// write the result to the buffer, always use 1.0 as the alpha
+			color.to_array4(&buffer[4 * (c_row * width + x)]);
+		}
 #pragma omp barrier
 
-        }
-    }
+		}
+	}
 
-    if (is_done) printf("Done raytracing!\n"); 
+	if (is_done) printf("Done raytracing!\n");
 
-    return is_done;
+	return is_done;
 }
 
 // ---------------------------------------------------------------------------------------------------------------- //
@@ -250,7 +255,7 @@ bool Raytracer::raytrace(unsigned char* buffer, real_t* max_time)
 Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	// get scene geometries
 	Geometry* const* sceneGeometries = scene->get_geometries();
-	
+
 	Intersection *closestIntersection = &Intersection();
 
 	/// check if the ray needs to be a certain length
