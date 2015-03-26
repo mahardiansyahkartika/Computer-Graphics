@@ -121,9 +121,6 @@ void Model::processHit(Intersection& hit) {
 	// compute alpha
 	real_t alpha = 1.0 - (thisHit.beta + thisHit.gamma);
 
-	if (mesh == NULL)
-		std::cout << "MESH IS NULL!!!" << std::endl;
-
 	MeshTriangle tri = mesh->triangles[thisHit.triangle_id];
 
 	MeshVertex v_a = mesh->vertices[tri.vertices[0]];
@@ -154,9 +151,6 @@ void Model::processHit(Intersection& hit) {
 	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
 
 	hit.int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
-	
-	//std::cout << "P: " << pix_x << "," << pix_y << " \t" <<width << "," << height << std::endl;
-	//std::cout << hit->int_point.tex_coord.x << "," << hit->int_point.tex_coord.y << " mesh color: " << hit->int_material.texture << std::endl;
 
 	return;
 }

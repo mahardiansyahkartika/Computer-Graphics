@@ -263,9 +263,9 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 
 		while (totalLoop--) {
 			Vector3 lightSample;
-			lightSample.x = random_gaussian() - 0.5;
-			lightSample.y = random_gaussian() - 0.5;
-			lightSample.z = random_gaussian() - 0.5;
+			lightSample.x = random_gaussian();
+			lightSample.y = random_gaussian();
+			lightSample.z = random_gaussian();
 
 			// normalize the vector
 			lightSample = normalize(lightSample);
@@ -306,11 +306,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 		avgLightColor += lightAccumulator*(real_t(1.0) / real_t(numSamples));
 	}
 
-	// average over the various lights in the scene
-	avgLightColor = avgLightColor*(real_t(1.0) / real_t(scene->num_lights()));
-
-	//Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
-	Color3 finalLightColor = t_p*(c_a*k_a);
+	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
 
 	return finalLightColor;
 }

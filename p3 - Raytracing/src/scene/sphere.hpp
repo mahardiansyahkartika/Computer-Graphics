@@ -30,7 +30,7 @@ public:
 	// additional functions
 	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
-	Vector2 ComputeSphereTextureCoord(Vector3 hitPosition);
+	Vector2 getTextureCoordinate(Vector3 hitPosition);
 };
 
 } /* _462 */

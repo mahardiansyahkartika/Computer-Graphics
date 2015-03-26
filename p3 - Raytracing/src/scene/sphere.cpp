@@ -184,7 +184,7 @@ void Sphere::processHit(Intersection& hit)
 	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
 
 	// compute texture coordinate on sphere
-	hit.int_point.tex_coord = ComputeSphereTextureCoord(hit.int_point.position);
+	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);
 
 	// populate the material properties
 	hit.int_material.ambient = material->ambient;
@@ -203,14 +203,7 @@ void Sphere::processHit(Intersection& hit)
 	return;
 }
 
-/** ----------------------------------------------------------------------
-* Computes the texture coordinate for point on sphere
-* Mathematical Details: Shirley 11.2 (2D Texture Mapping)
-* @param hitPosition
-*
-* @return
----------------------------------------------------------------------- */
-Vector2 Sphere::ComputeSphereTextureCoord(Vector3 hitPosition)
+Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 {
 	Vector2 tex_coord;
 	real_t theta = acos((hitPosition.z - position.z) / radius);

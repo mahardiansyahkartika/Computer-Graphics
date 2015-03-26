@@ -542,10 +542,6 @@ int main( int argc, char* argv[] )
 	argv = new char*[argc];
 	argv[1] = "scenes/floor.scene";
 
-	int i = 10;
-	while (i--) 
-		std::cout << "sdfa : " << random_gaussian() << std::endl;
-
     Options opt;
 
     Matrix3 mat;

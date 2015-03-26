@@ -157,23 +157,14 @@ void Triangle::processHit(Intersection& hit) {
 	v_b.normal = normalize(v_b.normal);
 	v_c.normal = normalize(v_c.normal);
 
+	//Vector3 localNormal = (alpha*v_a.normal) + (thisHit.beta*v_b.normal) + (thisHit.gamma*v_c.normal);
+	Vector3 localNormal = cross(v_b.position - v_a.position, v_c.position - v_a.position);
 
-	Vector3 localNormal = (alpha*v_a.normal) +
-		(thisHit.beta*v_b.normal) +
-		(thisHit.gamma*v_c.normal);
-
-	/// localNormal =
-	/// cross(v_b.position - v_a.position, v_c.position - v_a.position);
-
-	//localNormal = normalize(localNormal);
-
+	localNormal = normalize(localNormal);
 
 	Matrix4 normalMatrix;
 	transpose(&normalMatrix, invMat);
 	hit.int_point.normal = normalize(multiplyVector(normalMatrix, localNormal));
-
-	/// -------------!!!!!!!!!    HACK :(   !!!!!!!!!------------- ///
-	//hit->int_point.normal = normalize(localNormal);
 
 	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
 
@@ -189,25 +180,13 @@ void Triangle::interpolateMaterials(Intersection& hit, real_t alpha, real_t beta
 	Vertex v_c = vertices[2];
 
 	/// interpolate ambient color
-	hit.int_material.ambient =
-		(alpha * v_a.material->ambient) +
-		(beta * v_b.material->ambient) +
-		(gamma * v_c.material->ambient);
+	hit.int_material.ambient = (alpha * v_a.material->ambient) + (beta * v_b.material->ambient) + (gamma * v_c.material->ambient);
 	/// interpolate diffuse color
-	hit.int_material.diffuse =
-		(alpha * v_a.material->diffuse) +
-		(beta * v_b.material->diffuse) +
-		(gamma * v_c.material->diffuse);
+	hit.int_material.diffuse = (alpha * v_a.material->diffuse) + (beta * v_b.material->diffuse) + (gamma * v_c.material->diffuse);
 	/// interpolate specular color
-	hit.int_material.specular =
-		(alpha * v_a.material->specular) +
-		(beta * v_b.material->specular) +
-		(gamma * v_c.material->specular);
+	hit.int_material.specular = (alpha * v_a.material->specular) + (beta * v_b.material->specular) + (gamma * v_c.material->specular);
 	/// interpolate refractive index
-	hit.int_material.refractive_index =
-		(alpha * v_a.material->refractive_index) +
-		(beta * v_b.material->refractive_index) +
-		(gamma * v_c.material->refractive_index);
+	hit.int_material.refractive_index = (alpha * v_a.material->refractive_index) + (beta * v_b.material->refractive_index) + (gamma * v_c.material->refractive_index);
 
 	int width, height;
 	int pix_x, pix_y;
@@ -231,9 +210,6 @@ void Triangle::interpolateMaterials(Intersection& hit, real_t alpha, real_t beta
 	Color3 c_tex = v_c.material->texture.get_texture_pixel(pix_x, pix_y);
 
 	/// interpolate the texture colors
-	hit.int_material.texture =
-		(alpha * a_tex) +
-		(beta * b_tex) +
-		(gamma * c_tex);
+	hit.int_material.texture = (alpha * a_tex) + (beta * b_tex) + (gamma * c_tex);
 }
 } /* _462 */
