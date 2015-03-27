@@ -175,7 +175,7 @@ void Sphere::processHit(Intersection& hit)
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
-	hit.int_point.normal = normalize(normMat * localNormal);
+	hit.int_point.normal = normalize(normMat * normalize(localNormal));
 
 	// compute texture coordinate on sphere
 	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);
@@ -202,6 +202,7 @@ Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 	Vector2 tex_coord;
 	real_t theta = acos((hitPosition.z - position.z) / radius);
 	real_t phi = atan2(hitPosition.y - position.y, hitPosition.x - position.x);
+	// if phi is negative adding 2PI to phi
 	if (phi < 0)
 		phi = phi + (2 * PI);
 

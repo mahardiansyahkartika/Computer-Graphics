@@ -128,7 +128,12 @@ void Model::processHit(Intersection& hit) {
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = (alpha*v_a.normal) + (hit.beta*v_b.normal) + (hit.gamma*v_c.normal);
-	hit.int_point.normal = normalize(normMat * localNormal);
+	hit.int_point.normal = normalize(normMat * normalize(localNormal));
+	
+	// ray come from inside mesh, inverse normal
+	if (dot(hit.int_point.normal, hit.ray.d) > 0) {
+		hit.int_point.normal *= -1;
+	}
 
 	/// compute the texture coordinate
 	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (hit.beta*v_b.tex_coord) + (hit.gamma*v_c.tex_coord);

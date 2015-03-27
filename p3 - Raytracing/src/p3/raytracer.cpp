@@ -19,6 +19,8 @@ namespace _462 {
 static const unsigned STEP_SIZE = 1;
 static const unsigned CHUNK_SIZE = 1;
 
+#define MONTE_CARLO_SAMPLES 1
+
 Raytracer::Raytracer() {
 	scene = 0;
 	width = 0;
@@ -74,11 +76,8 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 		return scene->background_color;
 	}
 	else { // hit object
-		// DIFFUSE & AMBIENT
-		lightContribution = shadowRays(scene, intersection);
-
 		/// check for recursion termination condition
-		if (depth > 3) {
+		if (depth > 5) {
 			//std::cout << "EOR" << std::endl;
 			goto colorSummation; // no further recursion necessary
 		}
@@ -113,7 +112,7 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 				float randNumber = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 				// Probability: reflection = R, refraction = 1-R
 				if (randNumber < R){
-					goto reflection; //Fresnel Reflection
+					//goto reflection; //Fresnel Reflection
 				}
 			}
 			else { // inverse normal
@@ -122,7 +121,6 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 			outgoingDirection = refract(normal, incomingDirection, n / n_t);
 			if (outgoingDirection == Vector3(0, 0, 0)){
-				//std::cout << "REFLECTION" << std::endl;
 				goto reflection; // Total Internal Reflection
 			}
 
@@ -132,6 +130,9 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 			goto colorSummation;
 		}
 	reflection:
+		// DIFFUSE & AMBIENT
+		lightContribution = shadowRays(scene, intersection);
+
 		// create a reflected ray
 		reflectionVector = reflect(intersectionNormal, incomingDirection);
 		reflectedRay = Ray(intersection.int_point.position, reflectionVector);
@@ -307,7 +308,7 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	/// variable to sum over all light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 
-	int numSamples = 1; // Monte Carlo
+	int numSamples = MONTE_CARLO_SAMPLES; // Monte Carlo
 
 	// iterate through the light sources
 	for (unsigned int i = 0; i < scene->num_lights(); ++i) {
@@ -371,8 +372,6 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 		avgLightColor += lightAccumulator*(real_t(1.0) / real_t(numSamples));
 	}
 
-	Color3 finalLightColor = t_p*((c_a*k_a) + avgLightColor);
-
-	return finalLightColor;
+	return t_p*((c_a*k_a) + avgLightColor);
 }
 } /* _462 */
