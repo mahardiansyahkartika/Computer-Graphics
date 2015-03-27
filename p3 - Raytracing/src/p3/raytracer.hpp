@@ -48,6 +48,8 @@ public:
 	// additional functions
 	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
 	Color3 shadowRays(const Scene* scene, const Intersection intersection);
+	Color3 getReflectionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal);
+	Color3 getRefractionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal, real_t ratio);
 private:
     // the scene to trace
     Scene* scene;

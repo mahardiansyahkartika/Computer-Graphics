@@ -19,7 +19,8 @@ namespace _462 {
 static const unsigned STEP_SIZE = 1;
 static const unsigned CHUNK_SIZE = 1;
 
-#define MONTE_CARLO_SAMPLES 1
+#define MONTE_CARLO_SAMPLES 5
+#define RECURSIVE_LIGHT 5
 
 Raytracer::Raytracer() {
 	scene = 0;
@@ -61,46 +62,38 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 	// check if ray hits an object in the scene
 	Intersection intersection = raycast(ray, scene);
 
-	// instantiate the sources of color
-	Color3 finalColor(0.0, 0.0, 0.0), lightContribution(0.0, 0.0, 0.0), recursiveContribution(0.0, 0.0, 0.0);
-
 	/// declare all the recursion variables
 	Vector3 intersectionNormal;
-	Vector3 reflectionVector;
-	Ray reflectedRay, refractedRay;
-	Vector3 incomingDirection, outgoingDirection;
-	real_t n, n_t, R;
-	real_t squareRootTerm;
+	Vector3 incomingDirection;
+	real_t n, n_t;
 
 	if (intersection.t == std::numeric_limits<real_t>::infinity()) {
 		return scene->background_color;
 	}
 	else { // hit object
-		/// check for recursion termination condition
-		if (depth > 5) {
-			//std::cout << "EOR" << std::endl;
-			goto colorSummation; // no further recursion necessary
+		/// end of recursion
+		if (depth-- <= 0) {
+			return Color3(0, 0, 0);
 		}
 
 		// REFLECTION
-		intersectionNormal = intersection.int_point.normal;
-		incomingDirection = normalize(ray.d);
-
 		if (intersection.int_material.refractive_index == 0) { // opaque object
-			goto reflection;
+			// DIFFUSE & AMBIENT + REFLECTION
+			return shadowRays(scene, intersection) + getReflectionColor(ray, scene, intersection, depth, intersection.int_point.normal);
 		}
 		// REFRACTION
 		else {
+			intersectionNormal = intersection.int_point.normal;
+			incomingDirection = normalize(ray.d);
+
 			bool isOutsideGeometry = false;
 			if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
-				//std::cout << "ENTER" << std::endl;
 				n = scene->refractive_index;
 				n_t = intersection.int_material.refractive_index;
 
 				isOutsideGeometry = true;
 			}
 			else { // exiting dielectric
-				//std::cout << "EXIT" << std::endl;
 				n = intersection.int_material.refractive_index;
 				n_t = scene->refractive_index;
 			}
@@ -109,43 +102,38 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 			real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
 			if (isOutsideGeometry) { // check fresnell
-				float randNumber = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 				// Probability: reflection = R, refraction = 1-R
-				if (randNumber < R){
-					//goto reflection; //Fresnel Reflection
-				}
+				return (R * getReflectionColor(ray, scene, intersection, depth, normal)) + ((1 - R) * getRefractionColor(ray, scene, intersection, depth, normal, n / n_t));
 			}
 			else { // inverse normal
 				normal *= -1;
 			}
 
-			outgoingDirection = refract(normal, incomingDirection, n / n_t);
-			if (outgoingDirection == Vector3(0, 0, 0)){
-				goto reflection; // Total Internal Reflection
-			}
-
-			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
-			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
-
-			goto colorSummation;
+			return getRefractionColor(ray, scene, intersection, depth, normal, n / n_t);
 		}
-	reflection:
-		// DIFFUSE & AMBIENT
-		lightContribution = shadowRays(scene, intersection);
-
-		// create a reflected ray
-		reflectionVector = reflect(intersectionNormal, incomingDirection);
-		reflectedRay = Ray(intersection.int_point.position, reflectionVector);
-
-		recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
-		// multiply the returned color by the material's specular color and also by the texture color
-		recursiveContribution *= intersection.int_material.specular * intersection.int_material.texture;
-	colorSummation :
-		// add up the various colors
-		finalColor = lightContribution + recursiveContribution;
-
-		return finalColor;
 	}
+}
+
+Color3 Raytracer::getRefractionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal, real_t ratio) {
+	// create a refractive ray
+	Vector3 refractiveVector = refract(normal, normalize(ray.d), ratio);
+	if (refractiveVector == Vector3(0, 0, 0)){
+		// Total Internal Reflection
+		return shadowRays(scene, intersection) + getReflectionColor(ray, scene, intersection, depth, normal);
+	}
+
+	Ray refractedRay = Ray(intersection.int_point.position, refractiveVector);
+	return trace_ray(refractedRay, scene, depth);
+}
+
+Color3 Raytracer::getReflectionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal) {
+	// create a reflected ray
+	Vector3 reflectionVector = reflect(normal, normalize(ray.d));
+	Ray reflectedRay = Ray(intersection.int_point.position, reflectionVector);
+
+	Color3 reflectionColor = trace_ray(reflectedRay, scene, depth);
+	// multiply the returned color by the material's specular color and also by the texture color
+	return reflectionColor * intersection.int_material.specular * intersection.int_material.texture;
 }
 
 /**
@@ -171,10 +159,6 @@ Color3 Raytracer::trace_pixel(size_t x,
 
 	Color3 res = Color3::Black();
 
-	/// stack container to keep track of refractive indices
-	std::stack<real_t> refractive_indices;
-	refractive_indices.push(scene->refractive_index);
-
 	unsigned int iter;
 	for (iter = 0; iter < num_samples; iter++)
 	{
@@ -185,7 +169,7 @@ Color3 Raytracer::trace_pixel(size_t x,
 
 		Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
 
-		res += trace_ray(r, scene, 0);
+		res += trace_ray(r, scene, RECURSIVE_LIGHT);
 		// TODO return the color of the given pixel
 		// you don't have to use this stub function if you prefer to
 		// write your own version of Raytracer::raytrace.

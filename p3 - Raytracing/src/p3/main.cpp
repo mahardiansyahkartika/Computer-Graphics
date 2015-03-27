@@ -500,7 +500,7 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
     opt->open_window = true;
     opt->width = DEFAULT_WIDTH;
     opt->height = DEFAULT_HEIGHT;
-    opt->num_samples = 1;
+    opt->num_samples = 10;
     for (int i = 2; i < argc; i++)
     {
         switch (argv[i][1])
