@@ -116,12 +116,10 @@ Intersection Model::getIntersection(Ray& r) {
 }
 
 void Model::processHit(Intersection& hit) {
-	// cast the incoming pointer to a local intersection object
-	Intersection thisHit = static_cast<Intersection>(hit);
 	// compute alpha
-	real_t alpha = 1.0 - (thisHit.beta + thisHit.gamma);
+	real_t alpha = 1.0 - (hit.beta + hit.gamma);
 
-	MeshTriangle tri = mesh->triangles[thisHit.triangle_id];
+	MeshTriangle tri = mesh->triangles[hit.triangle_id];
 
 	MeshVertex v_a = mesh->vertices[tri.vertices[0]];
 	MeshVertex v_b = mesh->vertices[tri.vertices[1]];
@@ -129,11 +127,11 @@ void Model::processHit(Intersection& hit) {
 
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
-	Vector3 localNormal = (alpha*v_a.normal) + (thisHit.beta*v_b.normal) + (thisHit.gamma*v_c.normal);
+	Vector3 localNormal = (alpha*v_a.normal) + (hit.beta*v_b.normal) + (hit.gamma*v_c.normal);
 	hit.int_point.normal = normalize(normMat * localNormal);
 
 	/// compute the texture coordinate
-	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
+	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (hit.beta*v_b.tex_coord) + (hit.gamma*v_c.tex_coord);
 
 	/// store the material details
 	hit.int_material.diffuse = material->diffuse;

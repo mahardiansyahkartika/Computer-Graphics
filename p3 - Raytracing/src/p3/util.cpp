@@ -13,7 +13,7 @@ real_t montecarlo(Color3& light){
 real_t computeFresnelCoefficient(Intersection &next, Ray &ray, real_t index, real_t newIndex) {
 	real_t cos_theta = dot(-ray.d, next.int_point.normal);
 
-	real_t R_o = pow(((newIndex - index) / (newIndex + index)), 2);
+	real_t R_o = pow(((newIndex - 1) / (newIndex + 1)), 2);
 	real_t R = R_o + ((1.0 - R_o)*pow(1.0 - cos_theta, 5));
 
 	return R;

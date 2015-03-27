@@ -108,9 +108,8 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 			Vector3 normal = intersectionNormal;
 
+			real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
 			if (isOutsideGeometry) { // check fresnell
-				real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
-
 				float randNumber = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 				// Probability: reflection = R, refraction = 1-R
 				if (randNumber < R){
@@ -121,14 +120,12 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 				normal *= -1;
 			}
 
-			// compute the refracted ray direction: Shirley 13.1
-			squareRootTerm = real_t(1.0) - ((pow(n, 2) / pow(n_t, 2))*(real_t(1.0) - pow(dot(incomingDirection, normal), 2)));
-			if (squareRootTerm < 0){
+			outgoingDirection = refract(normal, incomingDirection, n / n_t);
+			if (outgoingDirection == Vector3(0, 0, 0)){
 				//std::cout << "REFLECTION" << std::endl;
 				goto reflection; // Total Internal Reflection
 			}
 
-			outgoingDirection = refract(normal, incomingDirection, n / n_t);
 			refractedRay = Ray(intersection.int_point.position, outgoingDirection);
 			recursiveContribution = trace_ray(refractedRay, scene, ++depth);
 
@@ -141,7 +138,7 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 
 		recursiveContribution = trace_ray(reflectedRay, scene, ++depth);
 		// multiply the returned color by the material's specular color and also by the texture color
-		recursiveContribution = recursiveContribution * intersection.int_material.specular * intersection.int_material.texture;
+		recursiveContribution *= intersection.int_material.specular * intersection.int_material.texture;
 	colorSummation :
 		// add up the various colors
 		finalColor = lightContribution + recursiveContribution;

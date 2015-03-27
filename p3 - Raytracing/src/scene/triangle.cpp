@@ -140,10 +140,8 @@ Intersection Triangle::getIntersection(Ray& r) {
 }
 
 void Triangle::processHit(Intersection& hit) {
-	/// cast the intersection object in the local type
-	Intersection thisHit = static_cast<Intersection>(hit);
 	/// compute alpha
-	real_t alpha = 1.0 - (thisHit.beta + thisHit.gamma);
+	real_t alpha = 1.0 - (hit.beta + hit.gamma);
 
 	/// get the triangle vertices
 	Vertex v_a = vertices[0];
@@ -161,9 +159,8 @@ void Triangle::processHit(Intersection& hit) {
 	Vector3 localNormal = cross(v_b.position - v_a.position, v_c.position - v_a.position);
 	hit.int_point.normal = normalize(normMat * localNormal);
 
-	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (thisHit.beta*v_b.tex_coord) + (thisHit.gamma*v_c.tex_coord);
-
-	interpolateMaterials(hit, alpha, thisHit.beta, thisHit.gamma);
+	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (hit.beta*v_b.tex_coord) + (hit.gamma*v_c.tex_coord);
+	interpolateMaterials(hit, alpha, hit.beta, hit.gamma);
 
 	return;
 }
