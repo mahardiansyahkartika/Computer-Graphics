@@ -200,11 +200,10 @@ void Sphere::processHit(Intersection& hit)
 Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 {
 	Vector2 tex_coord;
-	real_t theta = acos((hitPosition.z - position.z) / radius);
-	real_t phi = atan2(hitPosition.y - position.y, hitPosition.x - position.x);
+	real_t theta = acosf((hitPosition.y - position.y) / radius);
+	real_t phi = atan2(hitPosition.x - position.x, hitPosition.z - position.z);
 	// if phi is negative adding 2PI to phi
-	if (phi < 0)
-		phi = phi + (2 * PI);
+	if (phi < 0) phi = phi + (2 * PI);
 
 	tex_coord.x = phi / (2 * PI);
 	tex_coord.y = (PI - theta) / PI;
