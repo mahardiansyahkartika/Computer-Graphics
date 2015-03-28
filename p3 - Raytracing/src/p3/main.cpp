@@ -484,7 +484,7 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
     opt->open_window = true;
     opt->width = DEFAULT_WIDTH;
     opt->height = DEFAULT_HEIGHT;
-    opt->num_samples = 1;
+    opt->num_samples = 16;
     for (int i = 2; i < argc; i++)
     {
         switch (argv[i][1])
@@ -511,14 +511,19 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
             if (i < argc - 1)
                 opt->output_filename = argv[++i];
 			break;
-		case 'f':
+		case 'f': // field of depth
 			if (i >= argc - 3) return false;
 			opt->is_dof = true;
 			opt->dof_focal_length = atof(argv[++i]);
 			opt->dof_aperture_size = atof(argv[++i]);
 			opt->dof_total_ray = atoi(argv[++i]);
 			break;
-        }
+		case 'g': // glossy
+			if (i >= argc - 1) return false;
+			opt->is_glossy = true;
+			opt->glossy_width = atof(argv[++i]);
+			break;
+		}
     }
 
     return true;
@@ -530,13 +535,11 @@ int main( int argc, char* argv[] )
     omp_set_num_threads(MAX_THREADS);
 #endif
 
-	argc = 2;
+	argc = 4;
 	argv = new char*[argc];
-	argv[1] = "scenes/cornell_box.scene";
-	argv[2] = "-f";
-	argv[3] = "12";
-	argv[4] = "0.4";
-	argv[5] = "2";
+	argv[1] = "scenes/spheres.scene";
+	argv[2] = "-g";
+	argv[3] = "0.1";
 
     Options opt;
 

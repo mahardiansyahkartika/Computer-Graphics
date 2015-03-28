@@ -19,8 +19,8 @@ namespace _462 {
 static const unsigned STEP_SIZE = 1;
 static const unsigned CHUNK_SIZE = 1;
 
-#define MONTE_CARLO_SAMPLES 1
-#define RECURSIVE_LIGHT 3
+#define MONTE_CARLO_SAMPLES 10
+#define RECURSIVE_LIGHT 5
 
 Raytracer::Raytracer() {
 	scene = 0;
@@ -59,6 +59,10 @@ bool Raytracer::initialize(Scene* scene, size_t num_samples,
 		dofFocalLength = opt.dof_focal_length;
 		dofApertureSize = opt.dof_aperture_size;
 		dofTotalRay = opt.dof_total_ray;
+	}
+	else if (opt.is_glossy) { // glossy
+		isGlossy = opt.is_glossy;
+		glossyWidth = opt.glossy_width;
 	}
 
 	return true;
@@ -138,6 +142,18 @@ Color3 Raytracer::getRefractionColor(Ray& ray, const Scene* scene, const Interse
 Color3 Raytracer::getReflectionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal) {
 	// create a reflected ray
 	Vector3 reflectionVector = reflect(normal, normalize(ray.d));
+
+	// glossy reflection
+	if (isGlossy) {
+		Vector3 u, v, w;
+		createGlossyBasis(reflectionVector, u, v, w);
+
+		real_t U = -(glossyWidth / real_t(2)) + (random_uniform() * glossyWidth);
+		real_t V = -(glossyWidth / real_t(2)) + (random_uniform() * glossyWidth);
+
+		reflectionVector += u*U + v*V;
+	}
+
 	Ray reflectedRay = Ray(intersection.int_point.position, reflectionVector);
 
 	Color3 reflectionColor = trace_ray(reflectedRay, scene, depth);
@@ -359,5 +375,20 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 	}
 
 	return intersection.int_material.texture*((scene->ambient_light*intersection.int_material.ambient) + avgLightColor);
+}
+
+void Raytracer::createGlossyBasis(Vector3 r, Vector3& u, Vector3& v, Vector3& w) {
+	// make w a unit vector in the direction of r
+	w = normalize(r);
+
+	Vector3 t = w;
+	// make t to be sufficiently different from w
+	real_t *min = &t.x;
+	if (fabs(t.y) < fabs(*min)) min = &t.y;
+	if (fabs(t.z) < fabs(*min)) min = &t.z;
+	*min = 1;
+
+	u = normalize(cross(t, w));
+	v = cross(w, u);
 }
 } /* _462 */

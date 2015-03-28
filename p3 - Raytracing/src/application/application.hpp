@@ -37,6 +37,9 @@ struct Options
 	real_t dof_focal_length;
 	real_t dof_aperture_size;
 	size_t dof_total_ray;
+	// glossy reflection
+	bool is_glossy = false;
+	real_t glossy_width;
 };
 
 class Application
