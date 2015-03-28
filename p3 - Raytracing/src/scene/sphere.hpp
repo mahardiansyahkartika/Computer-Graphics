@@ -31,6 +31,7 @@ public:
 	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
 	Vector2 getTextureCoordinate(Vector3 hitPosition);
+	Bound createBoundingBox();
 };
 
 } /* _462 */

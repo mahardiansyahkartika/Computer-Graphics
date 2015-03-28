@@ -12,5 +12,4 @@
 #define MIN_REFINE_RATIO 2.0
 namespace _462 {
 
-
 } //namespace _462

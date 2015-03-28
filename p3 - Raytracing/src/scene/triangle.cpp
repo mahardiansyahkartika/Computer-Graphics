@@ -76,65 +76,68 @@ Intersection Triangle::getIntersection(Ray& r) {
 	// create ray in the object's local space
 	Ray ray(Vector3(iE.x, iE.y, iE.z), Vector3(iD.x, iD.y, iD.z));
 
-	// all vertices
-	Vertex vA = vertices[0];
-	Vertex vB = vertices[1];
-	Vertex vC = vertices[2];
+	// check bounding box
+	if (boundBox.intersects(ray)) {
+		// all vertices
+		Vertex vA = vertices[0];
+		Vertex vB = vertices[1];
+		Vertex vC = vertices[2];
 
-	// Cramer's Rule
-	// | Xa-Xb  Xa-Xc  Xd | | beta  |   | Xa - Xe |      | a  d  g | | beta  |   | j |
-	// | Ya-Yb  Ya-Yc  Yd | | gamma | = | Ya - Ye | ===> | b  e  h | | gamma | = | k |
-	// | Za-Zb  Xa-Xc  Zd | |   t   |   | Za - Ze |      | c  f  i | |   t   |   | l |
-	double a = vA.position.x - vB.position.x;
-	double b = vA.position.y - vB.position.y;
-	double c = vA.position.z - vB.position.z;
-	double d = vA.position.x - vC.position.x;
-	double e = vA.position.y - vC.position.y;
-	double f = vA.position.z - vC.position.z;
-	double g = ray.d.x;
-	double h = ray.d.y;
-	double i = ray.d.z;
-	double j = vA.position.x - ray.e.x;
-	double k = vA.position.y - ray.e.y;
-	double l = vA.position.z - ray.e.z;
+		// Cramer's Rule
+		// | Xa-Xb  Xa-Xc  Xd | | beta  |   | Xa - Xe |      | a  d  g | | beta  |   | j |
+		// | Ya-Yb  Ya-Yc  Yd | | gamma | = | Ya - Ye | ===> | b  e  h | | gamma | = | k |
+		// | Za-Zb  Xa-Xc  Zd | |   t   |   | Za - Ze |      | c  f  i | |   t   |   | l |
+		double a = vA.position.x - vB.position.x;
+		double b = vA.position.y - vB.position.y;
+		double c = vA.position.z - vB.position.z;
+		double d = vA.position.x - vC.position.x;
+		double e = vA.position.y - vC.position.y;
+		double f = vA.position.z - vC.position.z;
+		double g = ray.d.x;
+		double h = ray.d.y;
+		double i = ray.d.z;
+		double j = vA.position.x - ray.e.x;
+		double k = vA.position.y - ray.e.y;
+		double l = vA.position.z - ray.e.z;
 
-	// reduce number of operation
-	double ei_minus_hf = (e*i) - (h*f);
-	double gf_minus_di = (g*f) - (d*i);
-	double dh_minus_eg = (d*h) - (e*g);
-	double ak_minus_jb = (a*k) - (j*b);
-	double jc_minus_al = (j*c) - (a*l);
-	double bl_minus_kc = (b*l) - (k*c);
+		// reduce number of operation
+		double ei_minus_hf = (e*i) - (h*f);
+		double gf_minus_di = (g*f) - (d*i);
+		double dh_minus_eg = (d*h) - (e*g);
+		double ak_minus_jb = (a*k) - (j*b);
+		double jc_minus_al = (j*c) - (a*l);
+		double bl_minus_kc = (b*l) - (k*c);
 
-	// M = a(ei - hf) + b(gf - di) + c(dh - eg)
-	double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
+		// M = a(ei - hf) + b(gf - di) + c(dh - eg)
+		double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
 
-	// COMPUTE t
-	// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
-	real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
-	if (t < intersection.epsilon || t > intersection.t) {
-		return intersection;
+		// COMPUTE t
+		// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
+		real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
+		if (t < intersection.epsilon || t > intersection.t) {
+			return intersection;
+		}
+
+		// COMPUTE gamma
+		// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
+		real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
+		if (gamma < 0 || gamma > 1) {
+			return intersection;
+		}
+
+		// COMPUTE beta
+		// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
+		real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
+		if (beta < 0 || beta >(1 - gamma)) {
+			return intersection;
+		}
+
+		// update intersection
+		intersection.t = t;
+		intersection.beta = beta;
+		intersection.gamma = gamma;
+		intersection.ray = r; // save the untransformed ray
 	}
-
-	// COMPUTE gamma
-	// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
-	real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
-	if (gamma < 0 || gamma > 1) {
-		return intersection;
-	}
-
-	// COMPUTE beta
-	// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
-	real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
-	if (beta < 0 || beta >(1 - gamma)) {
-		return intersection;
-	}
-
-	// update intersection
-	intersection.t = t;
-	intersection.beta = beta;
-	intersection.gamma = gamma;
-	intersection.ray = r; // save the untransformed ray
 
 	return intersection;
 }
@@ -203,5 +206,21 @@ void Triangle::interpolateMaterials(Intersection& hit, real_t alpha, real_t beta
 
 	/// interpolate the texture colors
 	hit.int_material.texture = (alpha * a_tex) + (beta * b_tex) + (gamma * c_tex);
+}
+
+Bound Triangle::createBoundingBox() {
+	Vector3 min = vertices[0].position;
+	Vector3 max = vertices[0].position;
+
+	for (int i = 1; i < 3; ++i) {
+		if (vertices[i].position.x < min.x) min.x = vertices[i].position.x;
+		if (vertices[i].position.y < min.y) min.y = vertices[i].position.y;
+		if (vertices[i].position.z < min.z) min.z = vertices[i].position.z;
+		if (vertices[i].position.x > max.x) max.x = vertices[i].position.x;
+		if (vertices[i].position.y > max.y) max.y = vertices[i].position.y;
+		if (vertices[i].position.z > max.z) max.z = vertices[i].position.z;
+	}
+
+	return Bound(min, max);
 }
 } /* _462 */

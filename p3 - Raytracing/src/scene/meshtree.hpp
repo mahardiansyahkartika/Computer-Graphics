@@ -16,17 +16,25 @@
 
 namespace _462 {
 
+class MeshTreeNode{
+public:
+	MeshTreeNode();
+	~MeshTreeNode();
+
+	Bound bbox;
+	MeshTreeNode* left;
+	MeshTreeNode* right;
+	std::vector<MeshTriangle> triangles;
+};
 
 class MeshTree{
 public:
+	MeshTree *makeFlatTree(const Mesh *mesh);
+	void refine(const Mesh *mesh, MeshTree *tree);
+	MeshTree *makeRecTree(const Mesh *mesh);
+	void refineRec(const Mesh *mesh, MeshTree *tree);
+
+	Bound setBounds(const Mesh *mesh, MeshTree *tree);
 };
-
-
-MeshTree *makeFlatTree(const Mesh *mesh);
-void refine(const Mesh *mesh,MeshTree *tree);
-MeshTree *makeRecTree(const Mesh *mesh);
-void refineRec(const Mesh *mesh,MeshTree *tree);
-
-Bound setBounds(const Mesh *mesh,MeshTree *tree);
 } //namespace _462
 #endif /* defined(__p4__MeshTree__) */

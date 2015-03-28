@@ -34,6 +34,7 @@ public:
 	// additional functions
 	Intersection getIntersection(Ray& r);
 	void processHit(Intersection& hit);
+	Bound createBoundingBox();
 };
 
 

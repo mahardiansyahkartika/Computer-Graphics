@@ -94,6 +94,8 @@ public:
     // Normal transformation matrix
     Matrix3 normMat;
     bool isBig;
+
+	Bound boundBox;
     /**
      * Renders this geometry using OpenGL in the local coordinate space.
      */
@@ -104,6 +106,7 @@ public:
 	// additional functions
 	virtual Intersection getIntersection(Ray& r) = 0;
 	virtual void processHit(Intersection& hit) = 0;
+	virtual Bound createBoundingBox() = 0;
 };
 
 

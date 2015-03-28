@@ -74,8 +74,7 @@ static void init_sphere()
     initialized = true;
 }
 
-Sphere::Sphere()
-    : radius(0), material(0) {}
+Sphere::Sphere() : radius(0), material(0) {	}
 
 Sphere::~Sphere() {}
 
@@ -143,28 +142,31 @@ Intersection Sphere::getIntersection(Ray& r) {
 
 	Vector3 c = Vector3(0, 0, 0);
 
-	// compute discriminant
-	real_t A = dot(d, d);
-	real_t B = 2 * dot(d, e - c);
-	real_t C = dot(e - c, e - c) - pow(radius, 2);
-	// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
-	//real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
-	real_t discriminant = (B*B - (4 * A*C));
+	// check bounding box
+	if (boundBox.intersects(Ray(e, d))) {
+		// compute discriminant
+		real_t A = dot(d, d);
+		real_t B = 2 * dot(d, e - c);
+		real_t C = dot(e - c, e - c) - pow(radius, 2);
+		// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
+		//real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+		real_t discriminant = (B*B - (4 * A*C));
 
-	// no solution
-	if (discriminant < 0) {
-		return intersection;
+		// no solution
+		if (discriminant < 0) {
+			return intersection;
+		}
+
+		real_t t = solve_time(A, B, C);
+
+		if (t > intersection.t || t < intersection.epsilon) {
+			return intersection;
+		}
+
+		intersection.t = t;
+		intersection.ray = r;
+		intersection.localRay = Ray(e, d);
 	}
-
-	real_t t = solve_time(A, B, C);
-
-	if (t > intersection.t || t < intersection.epsilon) {
-		return intersection;
-	}
-
-	intersection.t = t;
-	intersection.ray = r;
-	intersection.localRay = Ray(e, d);
 
 	return intersection;
 }
@@ -208,6 +210,13 @@ Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 	tex_coord.x = phi / (2 * PI);
 	tex_coord.y = (PI - theta) / PI;
 	return tex_coord;
+}
+
+Bound Sphere::createBoundingBox() {
+	Vector3 center = Vector3(0, 0, 0);
+	Vector3 min = center - Vector3(1, 1, 1);
+	Vector3 max = center + Vector3(1, 1, 1);
+	return Bound(min, max);
 }
 } /* _462 */
 
