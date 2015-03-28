@@ -18,6 +18,11 @@ namespace _462{
 real_t random_uniform();
 
 /**
+* Generate a uniform random real_t on the interval [min, max)
+*/
+real_t random_uniform(real_t min, real_t max);
+
+/**
  * Generate a uniform random real_t from N(0, 1)
  */
 real_t random_gaussian();

@@ -40,7 +40,7 @@ Raytracer::~Raytracer() { }
 *  false is returned.
 */
 bool Raytracer::initialize(Scene* scene, size_t num_samples,
-	size_t width, size_t height)
+	size_t width, size_t height, Options opt)
 {
 	this->scene = scene;
 	this->num_samples = num_samples;
@@ -52,6 +52,15 @@ bool Raytracer::initialize(Scene* scene, size_t num_samples,
 	projector.init(scene->camera);
 	scene->initialize();
 	photonMap.initialize(scene);
+
+	// depth of field
+	if (opt.is_dof) {
+		isDof = opt.is_dof;
+		dofFocalLength = opt.dof_focal_length;
+		dofApertureSize = opt.dof_aperture_size;
+		dofTotalRay = opt.dof_total_ray;
+	}
+
 	return true;
 }
 //compute ambient lighting
@@ -167,9 +176,24 @@ Color3 Raytracer::trace_pixel(size_t x,
 		real_t i = real_t(2)*(real_t(x) + random_uniform())*dx - real_t(1);
 		real_t j = real_t(2)*(real_t(y) + random_uniform())*dy - real_t(1);
 
-		Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
+		// Depth of field
+		if (isDof) {
+			Color3 _res = Color3::Black();
+			for (size_t idx = 0; idx < dofTotalRay; ++idx) {
+				Vector3 pos = scene->camera.get_position() + scene->camera.get_direction() * scene->camera.near_clip;
+				pos = pos + random_uniform(-dofApertureSize*0.5f, dofApertureSize*0.5f) *  scene->camera.get_right() + random_uniform(-dofApertureSize*0.5f, dofApertureSize*0.5f) * scene->camera.get_up();
+				Vector3 pix_dir = projector.get_pixel_dir(i, j);
+				Vector3 focal_point = scene->camera.get_position() + pix_dir * dofFocalLength;
 
-		res += trace_ray(r, scene, RECURSIVE_LIGHT);
+				Ray r = Ray(pos, normalize(focal_point - pos));
+				_res += trace_ray(r, scene, RECURSIVE_LIGHT) * (real_t(1) / real_t(dofTotalRay));
+			}
+			res += _res;
+		}
+		else { // normal
+			Ray r = Ray(scene->camera.get_position(), projector.get_pixel_dir(i, j));
+			res += trace_ray(r, scene, RECURSIVE_LIGHT);
+		}
 		// TODO return the color of the given pixel
 		// you don't have to use this stub function if you prefer to
 		// write your own version of Raytracer::raytrace.
@@ -280,58 +304,40 @@ Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 }
 
 Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection) {
-	// instantitate required diffuse and ambient material/ light colors
-	Color3 k_d = intersection.int_material.diffuse;
-	Color3 k_a = intersection.int_material.ambient;
-	Color3 c_a = scene->ambient_light;
-	// get texture color
-	Color3 t_p = intersection.int_material.texture;
-
-	// instantiate the normal vector for the intersection
-	Vector3 normal = intersection.int_point.normal;
-	/// variable to sum over all light sources
+	// store total light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
+	// Monte Carlo samples
+	int numSamples = MONTE_CARLO_SAMPLES;
 
-	int numSamples = MONTE_CARLO_SAMPLES; // Monte Carlo
-
-	// iterate through the light sources
+	// iterate all the light sources
 	for (unsigned int i = 0; i < scene->num_lights(); ++i) {
 		SphereLight currentLight = scene->get_lights()[i];
-
-		// store color of light
-		Color3 lightColor = currentLight.color;
-		// store attenuation terms
-		real_t a_c = currentLight.attenuation.constant;
-		real_t a_l = currentLight.attenuation.linear;
-		real_t a_q = currentLight.attenuation.quadratic;
-
-		// instantiate a color accumulator to add light color contributions
-		Color3 lightAccumulator(0.0, 0.0, 0.0);
+		Color3 totalLight(0.0, 0.0, 0.0);
 
 		// monte carlo sampling = numSamples samples / light
 		unsigned totalLoop = numSamples;
 
 		while (totalLoop--) {
-			Vector3 lightSample;
-			lightSample.x = random_gaussian();
-			lightSample.y = random_gaussian();
-			lightSample.z = random_gaussian();
+			Vector3 sampleLight;
+			sampleLight.x = random_gaussian();
+			sampleLight.y = random_gaussian();
+			sampleLight.z = random_gaussian();
 
 			// normalize the vector
-			lightSample = normalize(lightSample);
+			sampleLight = normalize(sampleLight);
 
 			// scale the light sample
-			lightSample = (currentLight.radius * lightSample);
+			sampleLight = (currentLight.radius * sampleLight);
 			//transform the light sample
-			lightSample += currentLight.position;
+			sampleLight += currentLight.position;
 
-			Vector3 sampleDirection = normalize(lightSample - intersection.int_point.position);
+			Vector3 sampleDirection = normalize(sampleLight - intersection.int_point.position);
 
 			// instantiate light ray
 			Ray L = Ray(intersection.int_point.position, sampleDirection);
 
 			// compute t till the light intersection
-			real_t t_light = length(lightSample - intersection.int_point.position);
+			real_t t_light = length(sampleLight - intersection.int_point.position);
 
 			// check for obstruction in path to light
 			Intersection lightIntersection = raycast(L, scene, t_light);
@@ -341,21 +347,17 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 				continue;
 
 			// light is not blocked by any geomtery
-			// compute distance to light source
-			real_t d = t_light;
-
-			Color3 c_i = lightColor * (real_t(1.0) / (a_c + (d*a_l) + (pow(d, 2.0)*a_q)));
-
-			real_t normalDotLight = dot(normal, L.d);
+			real_t normalDotLight = dot(intersection.int_point.normal, L.d);
 			if (normalDotLight > 0) {
+				Color3 color = currentLight.color * (real_t(1.0) / (currentLight.attenuation.constant + (t_light*currentLight.attenuation.linear) + (pow(t_light, 2.0)*currentLight.attenuation.quadratic)));
 				// sum over all samples sent to a light source
-				lightAccumulator += (c_i * k_d * normalDotLight);
+				totalLight += (color * intersection.int_material.diffuse * normalDotLight);
 			}
 		}
 		// sum over all lights in scene
-		avgLightColor += lightAccumulator*(real_t(1.0) / real_t(numSamples));
+		avgLightColor += totalLight*(real_t(1.0) / real_t(numSamples));
 	}
 
-	return t_p*((c_a*k_a) + avgLightColor);
+	return intersection.int_material.texture*((scene->ambient_light*intersection.int_material.ambient) + avgLightColor);
 }
 } /* _462 */

@@ -1,0 +1,7 @@
++ move option struct to application hpp
++ add random_uniform(min, max)
++ add Camera::get_right() function 
+
+dofFocalLength = 12;
+dofApertureSize = 0.4f;
+dofTotalRay = 2;

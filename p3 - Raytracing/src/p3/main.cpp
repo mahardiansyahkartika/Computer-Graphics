@@ -46,22 +46,6 @@ static const size_t NUM_GL_LIGHTS = 8;
 
 // renders a scene using opengl
 
-/**
- * Struct of the program options.
- */
-struct Options
-{
-    // whether to open a window or just render without one
-    bool open_window;
-    // not allocated, pointed it to something static
-    const char* input_filename;
-    // not allocated, pointed it to something static
-    const char* output_filename;
-    // window dimensions
-    int width, height;
-    int num_samples;
-};
-
 class RaytracerApplication : public Application
 {
 public:
@@ -260,7 +244,7 @@ void RaytracerApplication::handle_event( const SDL_Event& event )
             toggle_raytracing( width, height );
             break;
         case KEY_SEND_PHOTONS:
-            raytracer.initialize(&scene, options.num_samples, 0, 0);
+            raytracer.initialize(&scene, options.num_samples, 0, 0, options);
             queue_render_photon=true;
             
         case KEY_SCREENSHOT:
@@ -297,7 +281,7 @@ void RaytracerApplication::toggle_raytracing( int width, int height )
         // initialize the raytracer (first make sure camera aspect is correct)
         scene.camera.aspect = real_t( width ) / real_t( height );
 
-        if (!raytracer.initialize(&scene, options.num_samples, width, height))
+        if (!raytracer.initialize(&scene, options.num_samples, width, height, options))
     {
             std::cout << "Raytracer initialization failed.\n";
             return; // leave untoggled since initialization failed.
@@ -526,6 +510,14 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
         case 'o':
             if (i < argc - 1)
                 opt->output_filename = argv[++i];
+			break;
+		case 'f':
+			if (i >= argc - 3) return false;
+			opt->is_dof = true;
+			opt->dof_focal_length = atof(argv[++i]);
+			opt->dof_aperture_size = atof(argv[++i]);
+			opt->dof_total_ray = atoi(argv[++i]);
+			break;
         }
     }
 
@@ -540,7 +532,11 @@ int main( int argc, char* argv[] )
 
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "extra/cornell_box_orange.scene";
+	argv[1] = "scenes/cornell_box.scene";
+	argv[2] = "-f";
+	argv[3] = "12";
+	argv[4] = "0.4";
+	argv[5] = "2";
 
     Options opt;
 

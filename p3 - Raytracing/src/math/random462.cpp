@@ -34,6 +34,15 @@ real_t random_uniform()
     return dist(*generator);
 }
 
+real_t random_uniform(real_t min, real_t max)
+{
+	if (min == max)
+		return 0;
+
+	std::uniform_real_distribution<> dist(min, std::nextafter(max, std::numeric_limits<real_t>::max()));
+	return dist(*generator);
+}
+
 /**
  * Generate a uniformly random integer between 0 (incl) and n (excl)
  */

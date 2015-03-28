@@ -214,8 +214,8 @@ Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 
 Bound Sphere::createBoundingBox() {
 	Vector3 center = Vector3(0, 0, 0);
-	Vector3 min = center - Vector3(1, 1, 1);
-	Vector3 max = center + Vector3(1, 1, 1);
+	Vector3 min = center - Vector3(radius, radius, radius);
+	Vector3 max = center + Vector3(radius, radius, radius);
 	return Bound(min, max);
 }
 } /* _462 */

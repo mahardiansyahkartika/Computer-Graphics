@@ -19,6 +19,7 @@
 #include "p3/photonmap.hpp"
 #include "p3/util.hpp"
 #include <stack> 
+#include "application/application.hpp"
 
 namespace _462 {
 
@@ -35,7 +36,7 @@ public:
     ~Raytracer();
 
     bool initialize(Scene* scene, size_t num_samples,
-                    size_t width, size_t height);
+                    size_t width, size_t height, Options opt);
 	Color3 trace_ray(Ray &ray, const Scene* scene, int depth/*more args*/);
     
     bool raytrace(unsigned char* buffer, real_t* max_time);
@@ -44,6 +45,13 @@ public:
                size_t y,
                size_t width,
                size_t height);
+
+	// additional attributes
+	// Depth of Field
+	bool isDof = false;
+	real_t dofFocalLength;
+	real_t dofApertureSize;
+	size_t dofTotalRay;
 
 	// additional functions
 	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
