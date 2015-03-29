@@ -143,7 +143,8 @@ Intersection Sphere::getIntersection(Ray& r) {
 	Vector3 c = Vector3(0, 0, 0);
 
 	// check bounding box
-	if (boundBox.intersects(Ray(e, d))) {
+	Ray _r = Ray(e, d);
+	if (boundBox.intersects(_r)) {
 		// compute discriminant
 		real_t A = dot(d, d);
 		real_t B = 2 * dot(d, e - c);

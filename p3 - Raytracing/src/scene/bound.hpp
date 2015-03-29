@@ -32,7 +32,7 @@ public:
         upper.y=-INFINITY;
         upper.z=-INFINITY;
     }
-    bool intersects(Ray ray) const;
+    bool intersects(Ray &ray) const;
     real_t dim(int i){return upper[i]-lower[i];}
     void assertIn(Vector3 other){
         for(int i =0;i<3;i++){
