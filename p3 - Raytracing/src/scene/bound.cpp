@@ -1,6 +1,6 @@
 #include "scene/bound.hpp"
 namespace _462{
-bool Bound::intersects(Ray &ray) const{
+bool Bound::intersects(Ray ray) const{
     real_t id0=1.0/ray.d[0];
     real_t id1=1.0/ray.d[1];
     real_t id2=1.0/ray.d[2];
