@@ -19,6 +19,7 @@
 #include <vector>
 #include <cfloat>
 #include "scene/bound.hpp"
+#include "application/application.hpp"
 
 namespace _462 {
 class Geometry;
@@ -100,7 +101,7 @@ public:
      * Renders this geometry using OpenGL in the local coordinate space.
      */
     virtual void render() const = 0;
-
+	virtual void update(real_t delta_time) = 0;
     virtual bool initialize();
 
 	// additional functions
@@ -176,6 +177,8 @@ public:
     void add_material( Material* m );
     void add_mesh( Mesh* m );
     void add_light( const SphereLight& l );
+
+	void update(real_t delta_time);
     
 private:
 

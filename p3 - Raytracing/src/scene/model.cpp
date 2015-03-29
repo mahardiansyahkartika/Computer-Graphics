@@ -172,4 +172,8 @@ Bound Model::createBoundingBox() {
 	}
 	return Bound(min, max);
 }
+
+void Model::update(real_t delta_time) {
+
+}
 } /* _462 */

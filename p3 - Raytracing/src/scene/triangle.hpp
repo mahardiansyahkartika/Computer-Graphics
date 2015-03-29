@@ -45,6 +45,7 @@ public:
 	void processHit(Intersection& hit);
 	void interpolateMaterials(Intersection& hit, real_t alpha, real_t beta, real_t gamma);
 	Bound createBoundingBox();
+	void update(real_t delta_time);
 };
 
 

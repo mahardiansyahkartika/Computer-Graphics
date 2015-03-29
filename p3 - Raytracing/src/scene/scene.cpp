@@ -59,6 +59,14 @@ bool Scene::initialize()
     return res;
 }
 
+void Scene::update(real_t delta_time) {
+	// update all geometries
+	for (unsigned int i = 0; i < num_geometries(); ++i)
+	{
+		geometries[i]->update(delta_time);
+	}
+}
+
 Geometry* const* Scene::get_geometries() const
 {
     return geometries.empty() ? NULL : &geometries[0];

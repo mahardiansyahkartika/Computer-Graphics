@@ -177,6 +177,7 @@ void Sphere::processHit(Intersection& hit)
 	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
 
 	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
+
 	hit.int_point.normal = normalize(normMat * normalize(localNormal));
 
 	// compute texture coordinate on sphere
@@ -217,6 +218,29 @@ Bound Sphere::createBoundingBox() {
 	Vector3 min = center - Vector3(radius, radius, radius);
 	Vector3 max = center + Vector3(radius, radius, radius);
 	return Bound(min, max);
+}
+
+void Sphere::update(real_t delta_time) {
+	if (Options::is_animating) {
+		if (flag) {
+			flag = false;
+			temp_radius = radius;
+		}
+
+		real_t maxRadius = 1.1f * temp_radius;
+		real_t minRadius = 0.9f * temp_radius;
+
+		real_t speed = 0.2f;
+
+		radius += speed * delta_time * direction;
+
+		if (radius >= maxRadius) {
+			direction = -1;
+		}
+		else if (radius <= minRadius) {
+			direction = 1;
+		}
+	}
 }
 } /* _462 */
 

@@ -223,4 +223,8 @@ Bound Triangle::createBoundingBox() {
 
 	return Bound(min, max);
 }
+
+void Triangle::update(real_t delta_time) {
+
+}
 } /* _462 */

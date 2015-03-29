@@ -40,6 +40,8 @@ struct Options
 	// glossy reflection
 	bool is_glossy = false;
 	real_t glossy_width;
+	// animation
+	const static bool is_animating = false;
 };
 
 class Application

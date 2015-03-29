@@ -5,3 +5,5 @@
 dofFocalLength = 12;
 dofApertureSize = 0.4f;
 dofTotalRay = 2;
+
+glossy_width = 0.1

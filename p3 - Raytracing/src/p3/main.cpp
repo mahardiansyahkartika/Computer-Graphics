@@ -187,6 +187,9 @@ void RaytracerApplication::update( real_t delta_time )
         camera_control.update( delta_time );
         scene.camera = camera_control.camera;
     }
+
+	// update scene for animation
+	scene.update(delta_time);
 }
 
 void RaytracerApplication::render()
@@ -484,7 +487,7 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
     opt->open_window = true;
     opt->width = DEFAULT_WIDTH;
     opt->height = DEFAULT_HEIGHT;
-    opt->num_samples = 16;
+    opt->num_samples = 1;
     for (int i = 2; i < argc; i++)
     {
         switch (argv[i][1])
@@ -534,12 +537,6 @@ int main( int argc, char* argv[] )
 #ifdef OPENMP
     omp_set_num_threads(MAX_THREADS);
 #endif
-
-	argc = 4;
-	argv = new char*[argc];
-	argv[1] = "scenes/spheres.scene";
-	argv[2] = "-g";
-	argv[3] = "0.1";
 
     Options opt;
 
