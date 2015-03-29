@@ -537,10 +537,6 @@ int main( int argc, char* argv[] )
 #ifdef OPENMP
     omp_set_num_threads(MAX_THREADS);
 #endif
-	argc = 2;
-	argv = new char*[argc];
-	argv[1] = "scenes/spheres.scene";
-
     Options opt;
 
     Matrix3 mat;
