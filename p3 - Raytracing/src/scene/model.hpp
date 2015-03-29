@@ -36,6 +36,7 @@ public:
 	void processHit(Intersection* hit);
 	Bound createBoundingBox();
 	void update(real_t delta_time);
+	void calculateTriangleMiddlePoint();
 };
 
 

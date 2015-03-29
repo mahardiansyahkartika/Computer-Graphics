@@ -19,12 +19,15 @@ namespace _462 {
 class MeshTreeNode{
 public:
 	MeshTreeNode();
+	MeshTreeNode(std::vector<MeshTriangle*> triangles);
 	~MeshTreeNode();
 
 	Bound bbox;
 	MeshTreeNode* left;
 	MeshTreeNode* right;
-	std::vector<MeshTriangle> triangles;
+	std::vector<MeshTriangle*> triangles;
+
+	void createBBox();
 };
 
 class MeshTree{
