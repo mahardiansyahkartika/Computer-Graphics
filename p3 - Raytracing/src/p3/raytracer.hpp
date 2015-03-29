@@ -23,6 +23,9 @@
 
 namespace _462 {
 
+#define MONTE_CARLO_SAMPLES 10
+#define RECURSIVE_LIGHT 5
+
 class Scene;
 class Ray;
 struct Intersection;

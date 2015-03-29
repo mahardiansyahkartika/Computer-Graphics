@@ -1,9 +1,34 @@
-+ move option struct to application hpp
-+ add random_uniform(min, max)
-+ add Camera::get_right() function 
+Implemented all basic functions
++ Implement the Raytracer class as defined by the spec to raytrace scenes.
++ Write intersection tests for all types of geometric objects in the scene.
++ Properly handle arbitrary scaling, rotation, and translation of geometries.
++ Implement the basic ray tracing algorithm by sending rays from the eye through all objects in the scene, up to a recursion depth of at least 3.
++ Add direct illumination and shadows by sending rays to point lights.
++ Add specular reections by sending reected rays into the scene.
++ Add refractions by sending transmission rays through dielectric materials.
++ Compute colors as specified in section 12.
++ Sample spherical light sources correctly to generate soft shadows.
++ Correctly render the scenes in the scenes directory.
 
-dofFocalLength = 12;
-dofApertureSize = 0.4f;
-dofTotalRay = 2;
+Right now, I'm using 10 monte carlo samples for shadow ray and 5 recursive light for reflection and refraction.
+You can change this value in raytracer.hpp
+#define MONTE_CARLO_SAMPLES 10
+#define RECURSIVE_LIGHT 5
 
-glossy_width = 0.1
+I also implemented this extra
++ Bounding Box for all geometries
++ Depth of field
+	to activate use additional parameter
+	./p3 scene_name -f focal_length aperture_size total_ray
+	for example: ./p3 scenes/cube.scene 12 0.4 2
+	cube_depth_of_field.jpg is screenshot from that input
++ Glossy Reflection
+	to active use additional parameter
+	./p3 scene_name -g glossy_width
+	for example: ./p3 scenes/spheres.scene 0.1
+	spheres_glossy.jpg is screen shot from that input
++ Add scale in and scale out animation to sphere
+	to activate change code directly (hard code)
+	in application.hpp inside struct Options, there is one variable 
+	"const static bool is_animating = false;"
+	if you change the value to "true" and open scene that has sphere (e.g. test.scene), the sphere will animate

@@ -19,9 +19,6 @@ namespace _462 {
 static const unsigned STEP_SIZE = 1;
 static const unsigned CHUNK_SIZE = 1;
 
-#define MONTE_CARLO_SAMPLES 1
-#define RECURSIVE_LIGHT 3
-
 Raytracer::Raytracer() {
 	scene = 0;
 	width = 0;
