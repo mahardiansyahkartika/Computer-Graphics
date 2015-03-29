@@ -20,7 +20,9 @@
 namespace _462 {
 
 Model::Model() : mesh( 0 ), material( 0 ) { }
-Model::~Model() { }
+Model::~Model() {
+	delete tree;
+}
 
 void Model::render() const
 {
@@ -34,9 +36,10 @@ void Model::render() const
 }
 bool Model::initialize(){
     Geometry::initialize();
-	
-	// prepare for meshtree
-	calculateTriangleMiddlePoint();
+
+	// create tree
+	tree = new MeshTree(mesh);
+
     return true;
 }
 
@@ -175,21 +178,5 @@ Bound Model::createBoundingBox() {
 	}
 	return Bound(min, max);
 }
-
-void Model::calculateTriangleMiddlePoint() {
-	for (unsigned int idxTri = 0; idxTri < mesh->num_triangles(); ++idxTri) {
-		MeshTriangle triangle = mesh->triangles[idxTri];
-
-		Vector3 middlePoint(0, 0, 0);
-
-		for (int i = 0; i < 3; ++i) {
-			MeshVertex vertices = mesh->vertices[triangle.vertices[i]];
-			middlePoint += vertices.position * (real_t(1) / real_t(3));
-		}
-		// assign
-		triangle.middlePoint = middlePoint;
-	}
-}
-
 void Model::update(real_t delta_time) {}
 } /* _462 */

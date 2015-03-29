@@ -32,6 +32,7 @@ public:
         upper.y=-INFINITY;
         upper.z=-INFINITY;
     }
+
     bool intersects(Ray &ray) const;
     real_t dim(int i){return upper[i]-lower[i];}
     void assertIn(Vector3 other){
@@ -39,6 +40,9 @@ public:
             assert(lower[i]<=other[i] && other[i]<=upper[i]);
         }
     }
+
+	int longestAxis();
+	void expand(Bound a);
 };
 static std::ostream& operator<<( std::ostream& os, const Bound& b )
 {

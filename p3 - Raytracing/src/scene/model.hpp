@@ -31,12 +31,14 @@ public:
     virtual void render() const;
     virtual bool initialize();
 
+	// additional attribute
+	std::vector<Vector3> midPointTriangles;
+
 	// additional functions
 	Intersection* getIntersection(Ray& r);
 	void processHit(Intersection* hit);
 	Bound createBoundingBox();
 	void update(real_t delta_time);
-	void calculateTriangleMiddlePoint();
 };
 
 

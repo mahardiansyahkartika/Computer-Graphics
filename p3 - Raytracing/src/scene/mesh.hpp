@@ -28,7 +28,6 @@ struct MeshTriangle
 {
     // index into the vertex list of the 3 vertices
     unsigned int vertices[3];
-	Vector3 middlePoint;
 };
 
 /**
