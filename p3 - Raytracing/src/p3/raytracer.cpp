@@ -292,7 +292,8 @@ Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	// get scene geometries
 	Geometry* const* sceneGeometries = scene->get_geometries();
 
-	Intersection *closestIntersection = &Intersection();
+	Intersection temp = Intersection();
+	Intersection *closestIntersection = &temp;
 
 	/// check if the ray needs to be a certain length
 	if (t1 > 0)
