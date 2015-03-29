@@ -32,12 +32,12 @@ I also implemented this extra
 + Depth of field
 	to activate use additional parameter
 	./p3 scene_name -f focal_length aperture_size total_ray
-	for example: ./p3 scenes/cube.scene 12 0.4 2
+	for example: ./p3 scenes/cube.scene -f 12 0.4 2
 	cube_depth_of_field.jpg is screenshot from that input
 + Glossy Reflection
 	to active use additional parameter
 	./p3 scene_name -g glossy_width
-	for example: ./p3 scenes/spheres.scene 0.1
+	for example: ./p3 scenes/spheres.scene -g 0.1
 	spheres_glossy.jpg is screen shot from that input
 + Add animation scale in and scale out to sphere
 	to activate change code directly (hard code)
