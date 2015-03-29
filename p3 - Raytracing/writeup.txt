@@ -17,6 +17,18 @@ You can change this value in raytracer.hpp
 
 I also implemented this extra
 + Bounding Box for all geometries
++ Hierarchical data structure
+	I implemented KD Trees for Model geometry
+	to build a tree, start from root which contains all the triangles of model and bounding box surrounding a whole thing.
+	at each level down the trees, I split the tree depends on the longest axis. Here the order of the process
+	1. Find middle point of all the triangles in node
+	2. Find the longest axis of the bounding box for that node.
+	3. For each triangle in the node, check whether, for the current axis, it is less than or greater than the overall midpoint
+		– if less than, push the triangle to the left child
+		– if greater than, push the triangle to the right child
+	4. They will stop the recursion if the node cannot split to be smaller (e.g. contain 1 triangle) or if the depth of the tree has reached certain number
+		right now, I limited the depth of the tree by 50. You can change the value in meshtree.hpp
+		#define MAX_TREE_DEPTH 50
 + Depth of field
 	to activate use additional parameter
 	./p3 scene_name -f focal_length aperture_size total_ray
@@ -27,7 +39,7 @@ I also implemented this extra
 	./p3 scene_name -g glossy_width
 	for example: ./p3 scenes/spheres.scene 0.1
 	spheres_glossy.jpg is screen shot from that input
-+ Add scale in and scale out animation to sphere
++ Add animation scale in and scale out to sphere
 	to activate change code directly (hard code)
 	in application.hpp inside struct Options, there is one variable 
 	"const static bool is_animating = false;"
