@@ -33,8 +33,8 @@ public:
     virtual void render() const;
 
 	// additional functions
-	Intersection getIntersection(Ray& r);
-	void processHit(Intersection& hit);
+	Intersection* getIntersection(Ray& r);
+	void processHit(Intersection* hit);
 	Vector2 getTextureCoordinate(Vector3 hitPosition);
 	Bound createBoundingBox();
 	void update(real_t delta_time);

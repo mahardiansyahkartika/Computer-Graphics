@@ -67,6 +67,15 @@ void Scene::update(real_t delta_time) {
 	}
 }
 
+Intersection::Intersection() {
+	epsilon = 0.001; // slop factor
+	t = std::numeric_limits<real_t>::infinity();
+	triangle_id = -1;
+	index = -1;
+}
+
+Intersection::~Intersection() {}
+
 Geometry* const* Scene::get_geometries() const
 {
     return geometries.empty() ? NULL : &geometries[0];

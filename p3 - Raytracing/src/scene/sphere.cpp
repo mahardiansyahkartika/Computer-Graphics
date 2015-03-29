@@ -129,8 +129,8 @@ real_t solve_time(real_t a,real_t b,real_t c){
 }
 
 // additional functions
-Intersection Sphere::getIntersection(Ray& r) {
-	Intersection intersection;
+Intersection* Sphere::getIntersection(Ray& r) {
+	Intersection* intersection = new Intersection();
 
 	// inverse e & d point
 	Vector4 iE = invMat * Vector4(r.e.x, r.e.y, r.e.z, 1);
@@ -160,43 +160,43 @@ Intersection Sphere::getIntersection(Ray& r) {
 
 		real_t t = solve_time(A, B, C);
 
-		if (t > intersection.t || t < intersection.epsilon) {
+		if (t > intersection->t || t < intersection->epsilon) {
 			return intersection;
 		}
 
-		intersection.t = t;
-		intersection.ray = r;
-		intersection.localRay = Ray(e, d);
+		intersection->t = t;
+		intersection->ray = r;
+		intersection->localRay = Ray(e, d);
 	}
 
 	return intersection;
 }
 
-void Sphere::processHit(Intersection& hit)
+void Sphere::processHit(Intersection* hit)
 {
 	// compute position
-	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
+	hit->int_point.position = hit->ray.e + (hit->ray.d*hit->t);
 
-	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
+	Vector3 localNormal = hit->localRay.e + (hit->localRay.d*hit->t);
 
-	hit.int_point.normal = normalize(normMat * normalize(localNormal));
+	hit->int_point.normal = normalize(normMat * normalize(localNormal));
 
 	// compute texture coordinate on sphere
-	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);
+	hit->int_point.tex_coord = getTextureCoordinate(hit->int_point.position);
 
 	// populate the material properties
-	hit.int_material.ambient = material->ambient;
-	hit.int_material.diffuse = material->diffuse;
-	hit.int_material.specular = material->specular;
-	hit.int_material.refractive_index = material->refractive_index;
+	hit->int_material.ambient = material->ambient;
+	hit->int_material.diffuse = material->diffuse;
+	hit->int_material.specular = material->specular;
+	hit->int_material.refractive_index = material->refractive_index;
 
 	int width, height;
 	int pix_x, pix_y;
 	material->texture.get_texture_size(&width, &height);
-	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
-	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
+	pix_x = (int)fmod(width*hit->int_point.tex_coord.x, width);
+	pix_y = (int)fmod(height*hit->int_point.tex_coord.y, height);
 
-	hit.int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
+	hit->int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
 
 	return;
 }

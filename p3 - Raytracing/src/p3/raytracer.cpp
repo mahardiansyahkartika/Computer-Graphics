@@ -70,61 +70,65 @@ Color3 Raytracer::trace_ray(Ray &ray, const Scene* scene, int depth/*maybe some 
 	//return Color3(fabs(sin(10 * ray.d.x)), fabs(10 * cos(ray.d.y)), fabs(10 * tan(ray.d.y)));
 
 	// check if ray hits an object in the scene
-	Intersection intersection = raycast(ray, scene);
+	Intersection* intersection = raycast(ray, scene);
 
 	/// declare all the recursion variables
 	Vector3 intersectionNormal;
 	Vector3 incomingDirection;
+	Color3 colorResult(0, 0, 0);
 	real_t n, n_t;
 
-	if (intersection.t == std::numeric_limits<real_t>::infinity()) {
-		return scene->background_color;
+	if (intersection->t == std::numeric_limits<real_t>::infinity()) {
+		colorResult = scene->background_color;
 	}
 	else { // hit object
 		/// end of recursion
 		if (depth-- <= 0) {
-			return Color3(0, 0, 0);
+			colorResult = Color3(0, 0, 0);
 		}
-
-		// REFLECTION
-		if (intersection.int_material.refractive_index == 0) { // opaque object
-			// DIFFUSE & AMBIENT + REFLECTION
-			return shadowRays(scene, intersection) + getReflectionColor(ray, scene, intersection, depth, intersection.int_point.normal);
-		}
-		// REFRACTION
 		else {
-			intersectionNormal = intersection.int_point.normal;
-			incomingDirection = normalize(ray.d);
-
-			bool isOutsideGeometry = false;
-			if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
-				n = scene->refractive_index;
-				n_t = intersection.int_material.refractive_index;
-
-				isOutsideGeometry = true;
+			// REFLECTION
+			if (intersection->int_material.refractive_index == 0) { // opaque object
+				// DIFFUSE & AMBIENT + REFLECTION
+				colorResult = shadowRays(scene, intersection) + getReflectionColor(ray, scene, intersection, depth, intersection->int_point.normal);
 			}
-			else { // exiting dielectric
-				n = intersection.int_material.refractive_index;
-				n_t = scene->refractive_index;
-			}
+			// REFRACTION
+			else {
+				intersectionNormal = intersection->int_point.normal;
+				incomingDirection = normalize(ray.d);
 
-			Vector3 normal = intersectionNormal;
+				bool isOutsideGeometry = false;
+				if (dot(incomingDirection, intersectionNormal) < 0) { // entering dielectric
+					n = scene->refractive_index;
+					n_t = intersection->int_material.refractive_index;
 
-			real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
-			if (isOutsideGeometry) { // check fresnell
-				// Probability: reflection = R, refraction = 1-R
-				return (R * getReflectionColor(ray, scene, intersection, depth, normal)) + ((1 - R) * getRefractionColor(ray, scene, intersection, depth, normal, n / n_t));
-			}
-			else { // inverse normal
-				normal *= -1;
-			}
+					isOutsideGeometry = true;
+				}
+				else { // exiting dielectric
+					n = intersection->int_material.refractive_index;
+					n_t = scene->refractive_index;
+				}
 
-			return getRefractionColor(ray, scene, intersection, depth, normal, n / n_t);
+				Vector3 normal = intersectionNormal;
+
+				real_t R = computeFresnelCoefficient(intersection, ray, n, n_t);
+				if (isOutsideGeometry) { // check fresnell
+					// Probability: reflection = R, refraction = 1-R
+					colorResult = (R * getReflectionColor(ray, scene, intersection, depth, normal)) + ((1 - R) * getRefractionColor(ray, scene, intersection, depth, normal, n / n_t));
+				}
+				else { // inverse normal
+					normal *= -1;
+					colorResult = getRefractionColor(ray, scene, intersection, depth, normal, n / n_t);
+				}
+			}
 		}
 	}
+
+	delete intersection;
+	return colorResult;
 }
 
-Color3 Raytracer::getRefractionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal, real_t ratio) {
+Color3 Raytracer::getRefractionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal, real_t ratio) {
 	// create a refractive ray
 	Vector3 refractiveVector = refract(normal, normalize(ray.d), ratio);
 	if (refractiveVector == Vector3(0, 0, 0)){
@@ -132,11 +136,11 @@ Color3 Raytracer::getRefractionColor(Ray& ray, const Scene* scene, const Interse
 		return shadowRays(scene, intersection) + getReflectionColor(ray, scene, intersection, depth, normal);
 	}
 
-	Ray refractedRay = Ray(intersection.int_point.position, refractiveVector);
+	Ray refractedRay = Ray(intersection->int_point.position, refractiveVector);
 	return trace_ray(refractedRay, scene, depth);
 }
 
-Color3 Raytracer::getReflectionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal) {
+Color3 Raytracer::getReflectionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal) {
 	// create a reflected ray
 	Vector3 reflectionVector = reflect(normal, normalize(ray.d));
 
@@ -151,11 +155,11 @@ Color3 Raytracer::getReflectionColor(Ray& ray, const Scene* scene, const Interse
 		reflectionVector += u*U + v*V;
 	}
 
-	Ray reflectedRay = Ray(intersection.int_point.position, reflectionVector);
+	Ray reflectedRay = Ray(intersection->int_point.position, reflectionVector);
 
 	Color3 reflectionColor = trace_ray(reflectedRay, scene, depth);
 	// multiply the returned color by the material's specular color and also by the texture color
-	return reflectionColor * intersection.int_material.specular * intersection.int_material.texture;
+	return reflectionColor * intersection->int_material.specular * intersection->int_material.texture;
 }
 
 /**
@@ -288,36 +292,39 @@ bool Raytracer::raytrace(unsigned char* buffer, real_t* max_time)
 // ---------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- ADDITIONAL FUNCTIONS --------------------------------------------- //
 // ---------------------------------------------------------------------------------------------------------------- //
-Intersection Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
+Intersection* Raytracer::raycast(Ray& ray, const Scene* scene, real_t t1) {
 	// get scene geometries
 	Geometry* const* sceneGeometries = scene->get_geometries();
 
-	Intersection temp = Intersection();
-	Intersection *closestIntersection = &temp;
+	Intersection* closestIntersection = new Intersection();
 
 	/// check if the ray needs to be a certain length
 	if (t1 > 0)
-		(*closestIntersection).t = t1;
+		closestIntersection->t = t1;
 
 	// check all for all objects in the scene
 	for (unsigned int i = 0; i < scene->num_geometries(); ++i)
 	{
-		Intersection currIntersection = sceneGeometries[i]->getIntersection(ray);
+		Intersection* currIntersection = sceneGeometries[i]->getIntersection(ray);
 		// check if this geometry is closer to ray
-		if (currIntersection.t < (*closestIntersection).t) {
-			closestIntersection = &sceneGeometries[i]->getIntersection(ray);
-			(*closestIntersection).index = i;
+		if (currIntersection->t < closestIntersection->t) {
+			delete closestIntersection;
+			closestIntersection = currIntersection;
+			closestIntersection->index = i;
+		}
+		else {
+			delete currIntersection;
 		}
 	}
 
 	// if hit, process hit
-	if ((*closestIntersection).index >= 0)
-		sceneGeometries[(*closestIntersection).index]->processHit(*closestIntersection);
+	if (closestIntersection->index >= 0)
+		sceneGeometries[closestIntersection->index]->processHit(closestIntersection);
 
-	return *closestIntersection;
+	return closestIntersection;
 }
 
-Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection) {
+Color3 Raytracer::shadowRays(const Scene* scene, const Intersection* intersection) {
 	// store total light sources
 	Color3 avgLightColor(0.0, 0.0, 0.0);
 	// Monte Carlo samples
@@ -345,34 +352,34 @@ Color3 Raytracer::shadowRays(const Scene* scene, const Intersection intersection
 			//transform the light sample
 			sampleLight += currentLight.position;
 
-			Vector3 sampleDirection = normalize(sampleLight - intersection.int_point.position);
+			Vector3 sampleDirection = normalize(sampleLight - intersection->int_point.position);
 
 			// instantiate light ray
-			Ray L = Ray(intersection.int_point.position, sampleDirection);
+			Ray L = Ray(intersection->int_point.position, sampleDirection);
 
 			// compute t till the light intersection
-			real_t t_light = length(sampleLight - intersection.int_point.position);
+			real_t t_light = length(sampleLight - intersection->int_point.position);
 
 			// check for obstruction in path to light
-			Intersection lightIntersection = raycast(L, scene, t_light);
-
-			// if the pointer points to a valid intersection container
-			if (lightIntersection.index >= 0)
-				continue;
+			Intersection* lightIntersection = raycast(L, scene, t_light);
 
 			// light is not blocked by any geomtery
-			real_t normalDotLight = dot(intersection.int_point.normal, L.d);
-			if (normalDotLight > 0) {
-				Color3 color = currentLight.color * (real_t(1.0) / (currentLight.attenuation.constant + (t_light*currentLight.attenuation.linear) + (pow(t_light, 2.0)*currentLight.attenuation.quadratic)));
-				// sum over all samples sent to a light source
-				totalLight += (color * intersection.int_material.diffuse * normalDotLight);
+			if (lightIntersection->index < 0) {
+				real_t normalDotLight = dot(intersection->int_point.normal, L.d);
+				if (normalDotLight > 0) {
+					Color3 color = currentLight.color * (real_t(1.0) / (currentLight.attenuation.constant + (t_light*currentLight.attenuation.linear) + (pow(t_light, 2.0)*currentLight.attenuation.quadratic)));
+					// sum over all samples sent to a light source
+					totalLight += (color * intersection->int_material.diffuse * normalDotLight);
+				}
 			}
+
+			delete lightIntersection;
 		}
 		// sum over all lights in scene
 		avgLightColor += totalLight*(real_t(1.0) / real_t(numSamples));
 	}
 
-	return intersection.int_material.texture*((scene->ambient_light*intersection.int_material.ambient) + avgLightColor);
+	return intersection->int_material.texture*((scene->ambient_light*intersection->int_material.ambient) + avgLightColor);
 }
 
 void Raytracer::createGlossyBasis(Vector3 r, Vector3& u, Vector3& v, Vector3& w) {

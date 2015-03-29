@@ -27,8 +27,11 @@ class Geometry;
 //represents an intersection between a ray and a geometry
 struct Intersection{
 public:
-	const real_t epsilon = 0.001; // slop factor
-	real_t t = std::numeric_limits<real_t>::infinity();
+	Intersection();
+	~Intersection();
+	
+	real_t epsilon; // slop factor
+	real_t t;
 
 	/// index of closest geometry
 	int index;
@@ -59,7 +62,7 @@ public:
 	// for triangles & models
 	real_t beta;
 	real_t gamma;
-	unsigned int triangle_id = -1;
+	unsigned int triangle_id;
 private:
 };
 
@@ -105,8 +108,8 @@ public:
     virtual bool initialize();
 
 	// additional functions
-	virtual Intersection getIntersection(Ray& r) = 0;
-	virtual void processHit(Intersection& hit) = 0;
+	virtual Intersection* getIntersection(Ray& r) = 0;
+	virtual void processHit(Intersection* hit) = 0;
 	virtual Bound createBoundingBox() = 0;
 };
 

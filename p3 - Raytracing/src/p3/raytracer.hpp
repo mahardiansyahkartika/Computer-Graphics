@@ -23,7 +23,7 @@
 
 namespace _462 {
 
-#define MONTE_CARLO_SAMPLES 10
+#define MONTE_CARLO_SAMPLES 1
 #define RECURSIVE_LIGHT 5
 
 class Scene;
@@ -33,7 +33,7 @@ class Raytracer
 {
 public:
     PhotonMap photonMap;
-
+	
     Raytracer();
 
     ~Raytracer();
@@ -60,10 +60,10 @@ public:
 	real_t glossyWidth;
 
 	// additional functions
-	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
-	Color3 shadowRays(const Scene* scene, const Intersection intersection);
-	Color3 getReflectionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal);
-	Color3 getRefractionColor(Ray& ray, const Scene* scene, const Intersection intersection, int depth, Vector3 normal, real_t ratio);
+	Intersection* raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
+	Color3 shadowRays(const Scene* scene, const Intersection* intersection);
+	Color3 getReflectionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal);
+	Color3 getRefractionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal, real_t ratio);
 	void createGlossyBasis(Vector3 r, Vector3& u, Vector3& v, Vector3& w);
 
 private:

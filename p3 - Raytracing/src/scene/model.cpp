@@ -38,8 +38,8 @@ bool Model::initialize(){
 }
 
 // additional functions
-Intersection Model::getIntersection(Ray& r) {
-	Intersection closestIntersection;
+Intersection* Model::getIntersection(Ray& r) {
+	Intersection* closestIntersection = new Intersection();
 
 	// inverse e & d point
 	Vector4 iE = invMat * Vector4(r.e.x, r.e.y, r.e.z, 1);
@@ -86,7 +86,7 @@ Intersection Model::getIntersection(Ray& r) {
 			// COMPUTE t
 			// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
 			real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
-			if (t < closestIntersection.epsilon || t > closestIntersection.t) {
+			if (t < closestIntersection->epsilon || t > closestIntersection->t) {
 				continue;
 			}
 
@@ -105,50 +105,50 @@ Intersection Model::getIntersection(Ray& r) {
 			}
 
 			// update intersection
-			closestIntersection.t = t;
-			closestIntersection.beta = beta;
-			closestIntersection.gamma = gamma;
-			closestIntersection.triangle_id = idxTri;
+			closestIntersection->t = t;
+			closestIntersection->beta = beta;
+			closestIntersection->gamma = gamma;
+			closestIntersection->triangle_id = idxTri;
 		}
 
-		closestIntersection.ray = r;
-		closestIntersection.localRay = ray;
+		closestIntersection->ray = r;
+		closestIntersection->localRay = ray;
 	}
 
 	return closestIntersection;
 }
 
-void Model::processHit(Intersection& hit) {
+void Model::processHit(Intersection* hit) {
 	// compute alpha
-	real_t alpha = 1.0 - (hit.beta + hit.gamma);
+	real_t alpha = 1.0 - (hit->beta + hit->gamma);
 
-	MeshTriangle tri = mesh->triangles[hit.triangle_id];
+	MeshTriangle tri = mesh->triangles[hit->triangle_id];
 
 	MeshVertex v_a = mesh->vertices[tri.vertices[0]];
 	MeshVertex v_b = mesh->vertices[tri.vertices[1]];
 	MeshVertex v_c = mesh->vertices[tri.vertices[2]];
 
-	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
+	hit->int_point.position = hit->ray.e + (hit->ray.d*hit->t);
 
-	Vector3 localNormal = (alpha*v_a.normal) + (hit.beta*v_b.normal) + (hit.gamma*v_c.normal);
-	hit.int_point.normal = normalize(normMat * normalize(localNormal));
+	Vector3 localNormal = (alpha*v_a.normal) + (hit->beta*v_b.normal) + (hit->gamma*v_c.normal);
+	hit->int_point.normal = normalize(normMat * normalize(localNormal));
 
 	/// compute the texture coordinate
-	hit.int_point.tex_coord = (alpha*v_a.tex_coord) + (hit.beta*v_b.tex_coord) + (hit.gamma*v_c.tex_coord);
+	hit->int_point.tex_coord = (alpha*v_a.tex_coord) + (hit->beta*v_b.tex_coord) + (hit->gamma*v_c.tex_coord);
 
 	/// store the material details
-	hit.int_material.diffuse = material->diffuse;
-	hit.int_material.ambient = material->ambient;
-	hit.int_material.specular = material->specular;
-	hit.int_material.refractive_index = material->refractive_index;
+	hit->int_material.diffuse = material->diffuse;
+	hit->int_material.ambient = material->ambient;
+	hit->int_material.specular = material->specular;
+	hit->int_material.refractive_index = material->refractive_index;
 
 	int width, height;
 	int pix_x, pix_y;
 	material->texture.get_texture_size(&width, &height);
-	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
-	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
+	pix_x = (int)fmod(width*hit->int_point.tex_coord.x, width);
+	pix_y = (int)fmod(height*hit->int_point.tex_coord.y, height);
 
-	hit.int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
+	hit->int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
 
 	return;
 }
