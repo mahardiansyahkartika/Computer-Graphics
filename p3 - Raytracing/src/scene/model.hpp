@@ -36,6 +36,7 @@ public:
 
 	// additional functions
 	Intersection* getIntersection(Ray& r);
+	void hit(Ray& r, MeshTreeNode* node, Intersection* intersection);
 	void processHit(Intersection* hit);
 	Bound createBoundingBox();
 	void update(real_t delta_time);

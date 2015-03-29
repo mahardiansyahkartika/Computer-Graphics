@@ -36,7 +36,6 @@ Bound* MeshTreeNode::createBBox(const Mesh* mesh) {
 		Bound bound = createTriangleBound(mesh, triangles[i]);
 		bbox->expand(bound);
 	}
-
 	return bbox;
 }
 
@@ -78,7 +77,17 @@ MeshTree::MeshTree(const Mesh* mesh) {
 
 MeshTree::~MeshTree() {
 	// delete all nodes in tree
+	freeNode(root);
+}
 
+void MeshTree::freeNode(MeshTreeNode* node) {
+	// Free the node postorder
+	if (node != NULL)
+	{
+		freeNode(node->left);
+		freeNode(node->right);
+		delete node;
+	}
 }
 
 Vector3 MeshTree::getTriangleMidPoint(const Mesh *mesh, MeshTriangle triangle) {
@@ -130,12 +139,13 @@ MeshTreeNode* MeshTree::build(const Mesh *mesh, std::vector<MeshTriangle> triang
 		}
 	}
 
+	// cannot divide anymore
 	if (leftTriangles.size() == 0 || rightTriangles.size() == 0) {
-		return NULL;
+		return node;
 	}
 
-	node->left = build(mesh, leftTriangles, ++depth);
-	node->right = build(mesh, rightTriangles, ++depth);
+	node->left = build(mesh, leftTriangles, depth + 1);
+	node->right = build(mesh, rightTriangles, depth + 1);
 	
 	return node;
 }

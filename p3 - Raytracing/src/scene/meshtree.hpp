@@ -50,6 +50,7 @@ public:
 	void refineRec(const Mesh *mesh, MeshTree *tree);
 	Bound setBounds(const Mesh *mesh, MeshTree *tree);
 
+	void freeNode(MeshTreeNode* node);
 	MeshTreeNode* build(const Mesh *mesh, std::vector<MeshTriangle> triangles, int depth);
 	Vector3 getTriangleMidPoint(const Mesh *mesh, MeshTriangle triangle);
 };

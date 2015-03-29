@@ -62,7 +62,7 @@ public:
 	// for triangles & models
 	real_t beta;
 	real_t gamma;
-	unsigned int triangle_id;
+	MeshTriangle hitTriangle;
 private:
 };
 

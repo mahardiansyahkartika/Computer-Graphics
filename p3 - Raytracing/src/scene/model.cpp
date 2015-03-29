@@ -38,12 +38,88 @@ bool Model::initialize(){
     Geometry::initialize();
 
 	// create tree
+	std::cout << "Start creating Tree" << std::endl;
 	tree = new MeshTree(mesh);
+	std::cout << "Creating tree done" << std::endl;
 
     return true;
 }
 
 // additional functions
+void Model::hit(Ray& r, MeshTreeNode* node, Intersection* intersection) {
+	if (node == NULL)
+		return;
+
+	if (node->bbox->intersects(r)) {
+		// if still has child
+		if (node->left != NULL || node->right != NULL) {
+			hit(r, node->left, intersection);
+			hit(r, node->right, intersection);
+		}
+		else { // we have reached leaf
+			// iterate all triangles in node
+			for (size_t idxTri = 0; idxTri < node->triangles.size(); ++idxTri) {
+				// all vertices
+				MeshVertex vA = mesh->vertices[node->triangles[idxTri].vertices[0]];
+				MeshVertex vB = mesh->vertices[node->triangles[idxTri].vertices[1]];
+				MeshVertex vC = mesh->vertices[node->triangles[idxTri].vertices[2]];
+
+				// Cramer's Rule
+				double a = vA.position.x - vB.position.x;
+				double b = vA.position.y - vB.position.y;
+				double c = vA.position.z - vB.position.z;
+				double d = vA.position.x - vC.position.x;
+				double e = vA.position.y - vC.position.y;
+				double f = vA.position.z - vC.position.z;
+				double g = r.d.x;
+				double h = r.d.y;
+				double i = r.d.z;
+				double j = vA.position.x - r.e.x;
+				double k = vA.position.y - r.e.y;
+				double l = vA.position.z - r.e.z;
+
+				// reduce number of operation
+				double ei_minus_hf = (e*i) - (h*f);
+				double gf_minus_di = (g*f) - (d*i);
+				double dh_minus_eg = (d*h) - (e*g);
+				double ak_minus_jb = (a*k) - (j*b);
+				double jc_minus_al = (j*c) - (a*l);
+				double bl_minus_kc = (b*l) - (k*c);
+
+				// M = a(ei - hf) + b(gf - di) + c(dh - eg)
+				double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
+
+				// COMPUTE t
+				// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
+				real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
+				if (t < intersection->epsilon || t > intersection->t) {
+					continue;
+				}
+
+				// COMPUTE gamma
+				// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
+				real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
+				if (gamma < 0 || gamma > 1) {
+					continue;
+				}
+
+				// COMPUTE beta
+				// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
+				real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
+				if (beta < 0 || beta >(1 - gamma)) {
+					continue;
+				}
+
+				// update intersection
+				intersection->t = t;
+				intersection->beta = beta;
+				intersection->gamma = gamma;
+				intersection->hitTriangle = node->triangles[idxTri];
+			}
+		}
+	}
+}
+
 Intersection* Model::getIntersection(Ray& r) {
 	Intersection* closestIntersection = new Intersection();
 
@@ -54,72 +130,11 @@ Intersection* Model::getIntersection(Ray& r) {
 	// create ray in the object's local space
 	Ray ray(Vector3(iE.x, iE.y, iE.z), Vector3(iD.x, iD.y, iD.z));
 
-	// check bounding box
-	if (boundBox.intersects(ray)) {
-		// iterate all triangles
-		for (unsigned int idxTri = 0; idxTri < mesh->num_triangles(); ++idxTri) {
-			MeshTriangle triangle = mesh->triangles[idxTri];
-			// all vertices
-			MeshVertex vA = mesh->vertices[triangle.vertices[0]];
-			MeshVertex vB = mesh->vertices[triangle.vertices[1]];
-			MeshVertex vC = mesh->vertices[triangle.vertices[2]];
+	// check hit
+	hit(ray, tree->root, closestIntersection);
 
-			// Cramer's Rule
-			double a = vA.position.x - vB.position.x;
-			double b = vA.position.y - vB.position.y;
-			double c = vA.position.z - vB.position.z;
-			double d = vA.position.x - vC.position.x;
-			double e = vA.position.y - vC.position.y;
-			double f = vA.position.z - vC.position.z;
-			double g = ray.d.x;
-			double h = ray.d.y;
-			double i = ray.d.z;
-			double j = vA.position.x - ray.e.x;
-			double k = vA.position.y - ray.e.y;
-			double l = vA.position.z - ray.e.z;
-
-			// reduce number of operation
-			double ei_minus_hf = (e*i) - (h*f);
-			double gf_minus_di = (g*f) - (d*i);
-			double dh_minus_eg = (d*h) - (e*g);
-			double ak_minus_jb = (a*k) - (j*b);
-			double jc_minus_al = (j*c) - (a*l);
-			double bl_minus_kc = (b*l) - (k*c);
-
-			// M = a(ei - hf) + b(gf - di) + c(dh - eg)
-			double M = a*ei_minus_hf + b*gf_minus_di + c*dh_minus_eg;
-
-			// COMPUTE t
-			// t = - (f(ak - jb) + e(jc - al) + d(bl - kc)) / M;
-			real_t t = -(f*ak_minus_jb + e*jc_minus_al + d*bl_minus_kc) / M;
-			if (t < closestIntersection->epsilon || t > closestIntersection->t) {
-				continue;
-			}
-
-			// COMPUTE gamma
-			// gamma = (i(ak - jb) + h(jc - al) + g(bl - kc)) / M;
-			real_t gamma = (i*ak_minus_jb + h*jc_minus_al + g*bl_minus_kc) / M;
-			if (gamma < 0 || gamma > 1) {
-				continue;
-			}
-
-			// COMPUTE beta
-			// beta = (j(ei - hf) + k(gf - di) + l(dh - eg)) / M;
-			real_t beta = (j*ei_minus_hf + k*gf_minus_di + l*dh_minus_eg) / M;
-			if (beta < 0 || beta >(1 - gamma)) {
-				continue;
-			}
-
-			// update intersection
-			closestIntersection->t = t;
-			closestIntersection->beta = beta;
-			closestIntersection->gamma = gamma;
-			closestIntersection->triangle_id = idxTri;
-		}
-
-		closestIntersection->ray = r;
-		closestIntersection->localRay = ray;
-	}
+	closestIntersection->ray = r;
+	closestIntersection->localRay = ray;
 
 	return closestIntersection;
 }
@@ -128,7 +143,7 @@ void Model::processHit(Intersection* hit) {
 	// compute alpha
 	real_t alpha = 1.0 - (hit->beta + hit->gamma);
 
-	MeshTriangle tri = mesh->triangles[hit->triangle_id];
+	MeshTriangle tri = hit->hitTriangle;
 
 	MeshVertex v_a = mesh->vertices[tri.vertices[0]];
 	MeshVertex v_b = mesh->vertices[tri.vertices[1]];
