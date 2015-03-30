@@ -19,8 +19,12 @@
 #include "p3/photonmap.hpp"
 #include "p3/util.hpp"
 #include <stack> 
+#include "application/application.hpp"
 
 namespace _462 {
+
+#define MONTE_CARLO_SAMPLES 10
+#define RECURSIVE_LIGHT 5
 
 class Scene;
 class Ray;
@@ -29,13 +33,13 @@ class Raytracer
 {
 public:
     PhotonMap photonMap;
-
+	
     Raytracer();
 
     ~Raytracer();
 
     bool initialize(Scene* scene, size_t num_samples,
-                    size_t width, size_t height);
+                    size_t width, size_t height, Options opt);
 	Color3 trace_ray(Ray &ray, const Scene* scene, int depth/*more args*/);
     
     bool raytrace(unsigned char* buffer, real_t* max_time);
@@ -45,9 +49,23 @@ public:
                size_t width,
                size_t height);
 
+	// additional attributes
+	// Depth of Field
+	bool isDof = false;
+	real_t dofFocalLength;
+	real_t dofApertureSize;
+	size_t dofTotalRay;
+	// Glossy Reflection
+	bool isGlossy = false;
+	real_t glossyWidth;
+
 	// additional functions
-	Intersection raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
-	Color3 shadowRays(const Scene* scene, const Intersection intersection);
+	Intersection* raycast(Ray& ray, const Scene* scene, real_t t1 = -1);
+	Color3 shadowRays(const Scene* scene, const Intersection* intersection);
+	Color3 getReflectionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal);
+	Color3 getRefractionColor(Ray& ray, const Scene* scene, const Intersection* intersection, int depth, Vector3 normal, real_t ratio);
+	void createGlossyBasis(Vector3 r, Vector3& u, Vector3& v, Vector3& w);
+
 private:
     // the scene to trace
     Scene* scene;

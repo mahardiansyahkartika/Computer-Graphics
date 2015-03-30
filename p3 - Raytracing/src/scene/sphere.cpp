@@ -74,8 +74,7 @@ static void init_sphere()
     initialized = true;
 }
 
-Sphere::Sphere()
-    : radius(0), material(0) {}
+Sphere::Sphere() : radius(0), material(0) {	}
 
 Sphere::~Sphere() {}
 
@@ -130,8 +129,8 @@ real_t solve_time(real_t a,real_t b,real_t c){
 }
 
 // additional functions
-Intersection Sphere::getIntersection(Ray& r) {
-	Intersection intersection;
+Intersection* Sphere::getIntersection(Ray& r) {
+	Intersection* intersection = new Intersection();
 
 	// inverse e & d point
 	Vector4 iE = invMat * Vector4(r.e.x, r.e.y, r.e.z, 1);
@@ -143,56 +142,61 @@ Intersection Sphere::getIntersection(Ray& r) {
 
 	Vector3 c = Vector3(0, 0, 0);
 
-	// compute determinant
-	real_t A = dot(d, d);
-	real_t B = 2 * dot(d, e - c);
-	real_t C = dot(e - c, e - c) - pow(radius, 2);
-	// determinant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
-	real_t determinant = (B*B - (4 * A*C));
+	// check bounding box
+	Ray _r = Ray(e, d);
+	if (boundBox.intersects(_r)) {
+		// compute discriminant
+		real_t A = dot(d, d);
+		real_t B = 2 * dot(d, e - c);
+		real_t C = dot(e - c, e - c) - pow(radius, 2);
+		// discriminant = (d · (e - c))^2 - (d · d) ((e - c) · (e - c) - R^2);
+		//real_t discriminant = pow(dot(d, e-c), 2) - (dot(d, d))*(dot(e-c, e-c) - pow(radius, 2));
+		real_t discriminant = (B*B - (4 * A*C));
 
-	// no solution
-	if (determinant < 0) {
-		return intersection;
+		// no solution
+		if (discriminant < 0) {
+			return intersection;
+		}
+
+		real_t t = solve_time(A, B, C);
+
+		if (t > intersection->t || t < intersection->epsilon) {
+			return intersection;
+		}
+
+		intersection->t = t;
+		intersection->ray = r;
+		intersection->localRay = Ray(e, d);
 	}
-
-	// choose the smaller t
-	real_t t = solve_time(A, B, C);
-
-	if (t > intersection.t || t < intersection.epsilon) {
-		return intersection;
-	}
-
-	intersection.t = t;
-	intersection.ray = r;
-	intersection.localRay = Ray(e, d);
 
 	return intersection;
 }
 
-void Sphere::processHit(Intersection& hit)
+void Sphere::processHit(Intersection* hit)
 {
 	// compute position
-	hit.int_point.position = hit.ray.e + (hit.ray.d*hit.t);
+	hit->int_point.position = hit->ray.e + (hit->ray.d*hit->t);
 
-	Vector3 localNormal = hit.localRay.e + (hit.localRay.d*hit.t);
-	hit.int_point.normal = normalize(normMat * normalize(localNormal));
+	Vector3 localNormal = hit->localRay.e + (hit->localRay.d*hit->t);
+
+	hit->int_point.normal = normalize(normMat * normalize(localNormal));
 
 	// compute texture coordinate on sphere
-	hit.int_point.tex_coord = getTextureCoordinate(hit.int_point.position);
+	hit->int_point.tex_coord = getTextureCoordinate(hit->int_point.position);
 
 	// populate the material properties
-	hit.int_material.ambient = material->ambient;
-	hit.int_material.diffuse = material->diffuse;
-	hit.int_material.specular = material->specular;
-	hit.int_material.refractive_index = material->refractive_index;
+	hit->int_material.ambient = material->ambient;
+	hit->int_material.diffuse = material->diffuse;
+	hit->int_material.specular = material->specular;
+	hit->int_material.refractive_index = material->refractive_index;
 
 	int width, height;
 	int pix_x, pix_y;
 	material->texture.get_texture_size(&width, &height);
-	pix_x = (int)fmod(width*hit.int_point.tex_coord.x, width);
-	pix_y = (int)fmod(height*hit.int_point.tex_coord.y, height);
+	pix_x = (int)fmod(width*hit->int_point.tex_coord.x, width);
+	pix_y = (int)fmod(height*hit->int_point.tex_coord.y, height);
 
-	hit.int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
+	hit->int_material.texture = material->texture.get_texture_pixel(pix_x, pix_y);
 
 	return;
 }
@@ -200,14 +204,44 @@ void Sphere::processHit(Intersection& hit)
 Vector2 Sphere::getTextureCoordinate(Vector3 hitPosition)
 {
 	Vector2 tex_coord;
-	real_t theta = acos((hitPosition.z - position.z) / radius);
-	real_t phi = atan2(hitPosition.y - position.y, hitPosition.x - position.x);
-	if (phi < 0)
-		phi = phi + (2 * PI);
+	real_t theta = acosf((hitPosition.y - position.y) / radius);
+	real_t phi = atan2(hitPosition.x - position.x, hitPosition.z - position.z);
+	// if phi is negative adding 2PI to phi
+	if (phi < 0) phi = phi + (2 * PI);
 
 	tex_coord.x = phi / (2 * PI);
 	tex_coord.y = (PI - theta) / PI;
 	return tex_coord;
+}
+
+Bound Sphere::createBoundingBox() {
+	Vector3 center = Vector3(0, 0, 0);
+	Vector3 min = center - Vector3(radius, radius, radius);
+	Vector3 max = center + Vector3(radius, radius, radius);
+	return Bound(min, max);
+}
+
+void Sphere::update(real_t delta_time) {
+	if (Options::is_animating) {
+		if (flag) {
+			flag = false;
+			temp_radius = radius;
+		}
+
+		real_t maxRadius = 1.1f * temp_radius;
+		real_t minRadius = 0.9f * temp_radius;
+
+		real_t speed = 0.2f;
+
+		radius += speed * delta_time * direction;
+
+		if (radius >= maxRadius) {
+			direction = -1;
+		}
+		else if (radius <= minRadius) {
+			direction = 1;
+		}
+	}
 }
 } /* _462 */
 
