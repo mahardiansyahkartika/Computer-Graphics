@@ -34,7 +34,7 @@ namespace _462 {
 //the number of samples used in the direct (shadow) estimate
 #define DIRECT_SAMPLE_COUNT 10
 
-real_t computeFresnelCoefficient(Intersection &next,Ray &ray,real_t index,real_t newIndex);
+real_t computeFresnelCoefficient(Intersection* next,Ray &ray,real_t index,real_t newIndex);
 Vector3 reflect(Vector3 norm,Vector3 inc);
 Vector3 refract(Vector3 norm,Vector3 inc,real_t ratio);
 real_t montecarlo(Color3& light);

@@ -16,6 +16,34 @@ namespace _462 {
 /**
  * A windowed application.
  */
+
+/**
+* Struct of the program options.
+*/
+struct Options
+{
+	// whether to open a window or just render without one
+	bool open_window;
+	// not allocated, pointed it to something static
+	const char* input_filename;
+	// not allocated, pointed it to something static
+	const char* output_filename;
+	// window dimensions
+	int width, height;
+	int num_samples;
+
+	// depth of field
+	bool is_dof = false;
+	real_t dof_focal_length;
+	real_t dof_aperture_size;
+	size_t dof_total_ray;
+	// glossy reflection
+	bool is_glossy = false;
+	real_t glossy_width;
+	// animation
+	const static bool is_animating = false;
+};
+
 class Application
 {
 public:

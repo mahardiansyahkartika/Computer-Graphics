@@ -32,7 +32,10 @@ public:
     // Returns the up vector, a unit vector pointing in the direction up from
     // the camera's orientation.
     Vector3 get_up() const;
-    // Returns the field of view in radians of the y-axis.
+	// Returns the right vector, a unit vector pointing in the direction right from
+	// the camera's orientation.
+	Vector3 get_right() const;
+	// Returns the field of view in radians of the y-axis.
     real_t get_fov_radians() const;
     // Returns the field of view in degrees of the y-axis.
     real_t get_fov_degrees() const;

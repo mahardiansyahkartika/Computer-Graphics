@@ -33,6 +33,11 @@ Vector3 Camera::get_up() const
     return orientation * Vector3::UnitY();
 }
 
+Vector3 Camera::get_right() const
+{
+	return orientation * Vector3::UnitX();
+}
+
 real_t Camera::get_fov_radians() const
 {
     return fov;

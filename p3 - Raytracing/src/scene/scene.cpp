@@ -26,6 +26,8 @@ bool Geometry::initialize()
     make_inverse_transformation_matrix(&invMat, position, orientation, scale);
     make_transformation_matrix(&mat, position, orientation, scale);
     make_normal_matrix(&normMat, mat);
+
+	boundBox = createBoundingBox();
     return true;
 }
 
@@ -56,6 +58,22 @@ bool Scene::initialize()
         res &= geometries[i]->initialize();
     return res;
 }
+
+void Scene::update(real_t delta_time) {
+	// update all geometries
+	for (unsigned int i = 0; i < num_geometries(); ++i)
+	{
+		geometries[i]->update(delta_time);
+	}
+}
+
+Intersection::Intersection() {
+	epsilon = 0.001; // slop factor
+	t = std::numeric_limits<real_t>::infinity();
+	index = -1;
+}
+
+Intersection::~Intersection() {}
 
 Geometry* const* Scene::get_geometries() const
 {
