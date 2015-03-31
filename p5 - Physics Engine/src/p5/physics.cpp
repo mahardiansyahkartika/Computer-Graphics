@@ -26,30 +26,37 @@ void Physics::step( real_t dt )
     // it
 
 	// CHECK COLLISION
-	for (size_t i = 0; i < num_spheres() - 1; ++i) {
+	check_collision();
+
+	// UPDATE STEP
+	update_step(dt);
+}
+
+void Physics::check_collision() {
+	for (size_t i = 0; i < num_spheres(); ++i) {
 		// check order: sphere, triangle, model, plane
 		// spheres
 		for (size_t j = i + 1; j < num_spheres(); ++j) {
-			collides(*(spheres[i]), *(spheres[j]), collision_damping);
+			if (collides(spheres[i], spheres[j], collision_damping)) break;
 		}
 		// triangles
 		for (size_t j = 0; j < num_triangles(); ++j) {
-			collides(*(spheres[i]), *(triangles[j]), collision_damping);
+			if (collides(spheres[i], triangles[j], collision_damping)) break;
 		}
 		// models
 		for (size_t j = 0; j < num_models(); ++j) {
-			collides(*(spheres[i]), *(models[j]), collision_damping);
+			if (collides(spheres[i], models[j], collision_damping)) break;
 		}
 		// planes
 		for (size_t j = 0; j < num_planes(); ++j) {
-			collides(*(spheres[i]), *(planes[j]), collision_damping);
+			if (collides(spheres[i], planes[j], collision_damping)) break;
 		}
 	}
+}
 
-	// UPDATE STEP
+void Physics::update_step(real_t dt) {
 	// spheres
 	for (size_t i = 0; i < num_spheres(); ++i) {
-		//if (i == 0) std::cout << spheres[i]->velocity << std::endl;
 		spheres[i]->step_position(dt, collision_damping);
 	}
 	// triangles
