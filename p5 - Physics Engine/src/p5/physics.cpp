@@ -24,6 +24,46 @@ void Physics::step( real_t dt )
     // Note, when you change the position/orientation of a physics object,
     // change the position/orientation of the graphical object that represents
     // it
+
+	// CHECK COLLISION
+	for (size_t i = 0; i < num_spheres() - 1; ++i) {
+		// check order: sphere, triangle, model, plane
+		// spheres
+		for (size_t j = i + 1; j < num_spheres(); ++j) {
+			collides(*(spheres[i]), *(spheres[j]), collision_damping);
+		}
+		// triangles
+		for (size_t j = 0; j < num_triangles(); ++j) {
+			collides(*(spheres[i]), *(triangles[j]), collision_damping);
+		}
+		// models
+		for (size_t j = 0; j < num_models(); ++j) {
+			collides(*(spheres[i]), *(models[j]), collision_damping);
+		}
+		// planes
+		for (size_t j = 0; j < num_planes(); ++j) {
+			collides(*(spheres[i]), *(planes[j]), collision_damping);
+		}
+	}
+
+	// UPDATE STEP
+	// spheres
+	for (size_t i = 0; i < num_spheres(); ++i) {
+		//if (i == 0) std::cout << spheres[i]->velocity << std::endl;
+		spheres[i]->step_position(dt, collision_damping);
+	}
+	// triangles
+	for (size_t i = 0; i < num_triangles(); ++i) {
+		triangles[i]->step_position(dt, collision_damping);
+	}
+	// models
+	for (size_t i = 0; i < num_models(); ++i) {
+		models[i]->step_position(dt, collision_damping);
+	}
+	// planes
+	for (size_t i = 0; i < num_planes(); ++i) {
+		planes[i]->step_position(dt, collision_damping);
+	}
 }
 
 void Physics::add_sphere( SphereBody* b )
