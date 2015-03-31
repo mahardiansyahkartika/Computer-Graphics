@@ -15,7 +15,8 @@ bool collides( SphereBody* body1, PlaneBody* body2, real_t collision_damping );
 bool collides( SphereBody* body1, ModelBody* body2, real_t collision_damping );
 
 // additional functions
-real_t relative_velocity(Body* body1, Body* body2);
+real_t relative_velocity(SphereBody* body1, SphereBody* body2);
+real_t relative_velocity(SphereBody* body1, Body* body2, Vector3 position);
 }
 
 #endif

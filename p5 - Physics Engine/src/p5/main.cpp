@@ -424,7 +424,7 @@ int main( int argc, char* argv[] )
 {
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "scenes/test_green.scene";
+	argv[1] = "scenes/collision.scene";
 
     Options opt;
 
