@@ -28,8 +28,9 @@ Vector3 SphereBody::step_position( real_t dt, real_t motion_damping )
     // scheme
     // TODO return the delta in position dt in the future
 
+	velocity += (force / mass) * dt;
+
 	Vector3 delta_position = velocity * dt;
-	//Vector3 delta_position = (velocity * dt) + ((force / mass) * dt * dt / real_t(2));
 	position += delta_position;
 
 	// update graphical object
