@@ -41,7 +41,7 @@ public:
 
 	// additional functions
 	void check_collision();
-	void update_step(real_t dt);
+	void update_geometries(real_t dt);
 private:
     typedef std::vector< Spring* > SpringList;
     typedef std::vector< SphereBody* > SphereList;

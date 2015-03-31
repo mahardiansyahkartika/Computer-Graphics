@@ -47,7 +47,25 @@ Vector3 SphereBody::step_orientation( real_t dt, real_t motion_damping )
     // vec.y = rotation along y axis
     // vec.z = rotation along z axis
 
-    return Vector3::Zero();
+	Vector3 delta_orientation = angular_velocity * dt;
+
+	// pitch
+	Vector3 axis_pitch = orientation * Vector3::UnitX();
+	real_t radian_pitch = delta_orientation.x;
+	orientation = normalize(Quaternion(axis_pitch, radian_pitch) * orientation);
+	// yaw
+	Vector3 axis_yaw = orientation * Vector3::UnitY();
+	real_t radian_yaw = delta_orientation.y;
+	orientation = normalize(Quaternion(axis_yaw, radian_yaw) * orientation);
+	// roll
+	Vector3 axis_roll = orientation * Vector3::UnitZ();
+	real_t radian_roll = delta_orientation.z;
+	orientation = normalize(Quaternion(axis_roll, radian_roll) * orientation);
+
+	// update graphical object
+	sphere->orientation = orientation;
+
+    return delta_orientation;
 }
 
 void SphereBody::apply_force( const Vector3& f, const Vector3& offset )

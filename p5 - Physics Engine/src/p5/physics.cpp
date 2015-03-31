@@ -25,11 +25,11 @@ void Physics::step( real_t dt )
     // change the position/orientation of the graphical object that represents
     // it
 
-	// CHECK COLLISION
+	// Check Collision
 	check_collision();
 
-	// UPDATE STEP
-	update_step(dt);
+	// Update Step & Orientation
+	update_geometries(dt);
 }
 
 void Physics::check_collision() {
@@ -37,39 +37,43 @@ void Physics::check_collision() {
 		// check order: sphere, triangle, model, plane
 		// spheres
 		for (size_t j = i + 1; j < num_spheres(); ++j) {
-			if (collides(spheres[i], spheres[j], collision_damping)) break;
+			collides(spheres[i], spheres[j], collision_damping);
 		}
 		// triangles
 		for (size_t j = 0; j < num_triangles(); ++j) {
-			if (collides(spheres[i], triangles[j], collision_damping)) break;
+			collides(spheres[i], triangles[j], collision_damping);
 		}
 		// models
 		for (size_t j = 0; j < num_models(); ++j) {
-			if (collides(spheres[i], models[j], collision_damping)) break;
+			collides(spheres[i], models[j], collision_damping);
 		}
 		// planes
 		for (size_t j = 0; j < num_planes(); ++j) {
-			if (collides(spheres[i], planes[j], collision_damping)) break;
+			collides(spheres[i], planes[j], collision_damping);
 		}
 	}
 }
 
-void Physics::update_step(real_t dt) {
+void Physics::update_geometries(real_t dt) {
 	// spheres
 	for (size_t i = 0; i < num_spheres(); ++i) {
 		spheres[i]->step_position(dt, collision_damping);
+		spheres[i]->step_orientation(dt, collision_damping);
 	}
 	// triangles
 	for (size_t i = 0; i < num_triangles(); ++i) {
 		triangles[i]->step_position(dt, collision_damping);
+		triangles[i]->step_orientation(dt, collision_damping);
 	}
 	// models
 	for (size_t i = 0; i < num_models(); ++i) {
 		models[i]->step_position(dt, collision_damping);
+		models[i]->step_orientation(dt, collision_damping);
 	}
 	// planes
 	for (size_t i = 0; i < num_planes(); ++i) {
 		planes[i]->step_position(dt, collision_damping);
+		planes[i]->step_orientation(dt, collision_damping);
 	}
 }
 
