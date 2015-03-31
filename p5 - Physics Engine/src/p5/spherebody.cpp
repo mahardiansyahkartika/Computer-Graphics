@@ -29,6 +29,7 @@ Vector3 SphereBody::step_position( real_t dt, real_t motion_damping )
     // TODO return the delta in position dt in the future
 
 	Vector3 delta_position = velocity * dt;
+	//Vector3 delta_position = (velocity * dt) + ((force / mass) * dt * dt / real_t(2));
 	position += delta_position;
 
 	// update graphical object
@@ -71,6 +72,7 @@ Vector3 SphereBody::step_orientation( real_t dt, real_t motion_damping )
 void SphereBody::apply_force( const Vector3& f, const Vector3& offset )
 {
     // TODO apply force/torque to sphere
+	force = f;
 }
 
 }

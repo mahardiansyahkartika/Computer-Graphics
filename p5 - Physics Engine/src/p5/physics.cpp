@@ -28,8 +28,30 @@ void Physics::step( real_t dt )
 	// Check Collision
 	check_collision();
 
+	// Apply forces
+	apply_forces(gravity, Vector3::Zero());
+
 	// Update Step & Orientation
 	update_geometries(dt);
+}
+
+void Physics::apply_forces(const Vector3& f, const Vector3& offset) {
+	// spheres
+	for (size_t i = 0; i < num_spheres(); ++i) {
+		spheres[i]->apply_force(f, offset);
+	}
+	// triangles
+	for (size_t i = 0; i < num_triangles(); ++i) {
+		triangles[i]->apply_force(f, offset);
+	}
+	// models
+	for (size_t i = 0; i < num_models(); ++i) {
+		models[i]->apply_force(f, offset);
+	}
+	// planes
+	for (size_t i = 0; i < num_planes(); ++i) {
+		planes[i]->apply_force(f, offset);
+	}
 }
 
 void Physics::check_collision() {

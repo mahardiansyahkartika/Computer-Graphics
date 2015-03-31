@@ -424,7 +424,7 @@ int main( int argc, char* argv[] )
 {
 	argc = 2;
 	argv = new char*[argc];
-	argv[1] = "scenes/rotation_test.scene";
+	argv[1] = "scenes/damping_test.scene";
 
     Options opt;
 
