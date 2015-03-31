@@ -17,6 +17,7 @@ bool collides( SphereBody* body1, ModelBody* body2, real_t collision_damping );
 // additional functions
 real_t relative_velocity(SphereBody* body1, Body* body2, Vector3 position);
 bool is_within_barycentric(const Vector3 point, const Vector3 vertices[3]);
+Vector3 damping(Vector3 velocity, real_t collision_damping);
 }
 
 #endif

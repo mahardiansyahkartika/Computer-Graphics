@@ -22,8 +22,8 @@ bool collides( SphereBody* body1, SphereBody* body2, real_t collision_damping )
 			v1_new = ((body1->mass * body1->velocity) + (body2->mass * body2->velocity) - (body2->mass * v2_new)) / body1->mass;
 
 			// update velocity
-			body1->velocity = v1_new;
-			body2->velocity = v2_new;
+			body1->velocity = damping(v1_new, collision_damping);
+			body2->velocity = damping(v2_new, collision_damping);
 
 			return true;
 		}
@@ -53,7 +53,7 @@ bool collides( SphereBody* body1, TriangleBody* body2, real_t collision_damping 
 			Vector3 v_new = body1->velocity - (real_t(2) * dot(body1->velocity, normal) * normal);
 
 			// update velocity
-			body1->velocity = v_new;
+			body1->velocity = damping(v_new, collision_damping);
 
 			return true;
 		}
@@ -75,7 +75,7 @@ bool collides( SphereBody* body1, PlaneBody* body2, real_t collision_damping )
 			Vector3 v_new = body1->velocity - (2 * dot(body1->velocity, body2->normal) * body2->normal);
 			
 			// update velocity
-			body1->velocity = v_new;
+			body1->velocity = damping(v_new, collision_damping);
 
 			return true;
 		}
@@ -115,5 +115,13 @@ bool is_within_barycentric(const Vector3 point, const Vector3 vertices[3]) {
 
 	// Check if point is in triangle
 	return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
+Vector3 damping(Vector3 velocity, real_t collision_damping) {
+	Vector3 v = velocity - collision_damping * velocity;
+	// check epsilon, so that we don't keep on making minor changes
+	if (length(v) <= 0.01f) v = Vector3::Zero();
+
+	return v;
 }
 }
