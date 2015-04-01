@@ -28,7 +28,7 @@ void Physics::step( real_t dt )
 	// Check Collision
 	check_collision();
 
-	// Apply forces
+	// Apply gravity force
 	apply_forces(gravity, Vector3::Zero());
 
 	// Update Step & Orientation
@@ -59,19 +59,19 @@ void Physics::check_collision() {
 		// check order: sphere, triangle, model, plane
 		// spheres
 		for (size_t j = i + 1; j < num_spheres(); ++j) {
-			collides(spheres[i], spheres[j], collision_damping);
+			collides(*spheres[i], *spheres[j], collision_damping);
 		}
 		// triangles
 		for (size_t j = 0; j < num_triangles(); ++j) {
-			collides(spheres[i], triangles[j], collision_damping);
+			collides(*spheres[i], *triangles[j], collision_damping);
 		}
 		// models
 		for (size_t j = 0; j < num_models(); ++j) {
-			collides(spheres[i], models[j], collision_damping);
+			collides(*spheres[i], *models[j], collision_damping);
 		}
 		// planes
 		for (size_t j = 0; j < num_planes(); ++j) {
-			collides(spheres[i], planes[j], collision_damping);
+			collides(*spheres[i], *planes[j], collision_damping);
 		}
 	}
 }

@@ -4,10 +4,9 @@
 #include "p5/body.hpp"
 #include "math/vector.hpp"
 #include "math/quaternion.hpp"
+#include "scene/model.hpp"
 
 namespace _462 {
-
-class Model;
 
 class ModelBody : public Body
 {
