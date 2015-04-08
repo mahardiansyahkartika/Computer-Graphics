@@ -9,8 +9,8 @@ TriangleBody::TriangleBody( Triangle* geom )
     vertices[1] = geom->vertices[1].position;
     vertices[2] = geom->vertices[2].position;
     orientation = Quaternion::Identity();
-    velocity = Vector3::Zero();
-    velocity = Vector3::Zero();
+	velocity = Vector3::Zero();
+	angular_velocity = Vector3::Zero();
 }
 
 Vector3 TriangleBody::step_position( real_t dt, real_t motion_damping )

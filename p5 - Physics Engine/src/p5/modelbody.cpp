@@ -8,6 +8,8 @@ ModelBody::ModelBody( Model* geom )
     model = geom;
 	position = geom->position;
 	orientation = geom->orientation;
+	velocity = Vector3::Zero();
+	angular_velocity = Vector3::Zero();
 }
 
 Vector3 ModelBody::step_position( real_t dt, real_t motion_damping )

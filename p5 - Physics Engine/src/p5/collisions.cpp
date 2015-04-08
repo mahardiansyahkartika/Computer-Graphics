@@ -7,7 +7,7 @@ bool collides(SphereBody& body1, SphereBody& body2, real_t collision_damping)
     // TODO detect collision. If there is one, update velocity
 
 	// relative velocity of one object to the other is positive
-	if (relative_velocity(body1, body2, body2.position) >= 0) {
+	if (relative_velocity(body1, body2.velocity, body2.position) >= 0) {
 		real_t distance = length(body2.position - body1.position);
 
 		// collide
@@ -44,13 +44,13 @@ bool collides(SphereBody& body1, TriangleBody& body2, real_t collision_damping)
 	Vector3 normal = normalize(cross(v_b - v_a, v_c - v_a));
 
 	real_t distance = dot(body1.position - body2.position, normal);
-	Vector3 hit_point = body1.position - distance * normal;
+	Vector3 projection_point = body1.position - distance * normal;
 
 	// relative velocity of one object to the other is positive
-	if (relative_velocity(body1, body2, hit_point) >= 0) {
+	if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
 		// check distance and check whether the hit_point within barycentric coordinates
 		real_t beta, gamma;
-		if (abs(distance) <= body1.radius && is_within_barycentric(hit_point, body2.vertices, beta, gamma)) {
+		if (abs(distance) <= body1.radius && is_within_barycentric(projection_point, body2.vertices, beta, gamma)) {
 			Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal) * normal);
 
 			// update velocity
@@ -67,10 +67,10 @@ bool collides(SphereBody& body1, PlaneBody& body2, real_t collision_damping)
     // TODO detect collision. If there is one, update velocity
 
 	real_t distance = dot(body1.position - body2.position, body2.normal);
-	Vector3 hit_point = body1.position - distance * body2.normal;
+	Vector3 projection_point = body1.position - distance * body2.normal;
 
 	// relative velocity of one object to the other is positive
-	if (relative_velocity(body1, body2, hit_point) >= 0) {
+	if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
 		// collide
 		if (abs(distance) <= body1.radius) {
 			Vector3 v_new = body1.velocity - (2 * dot(body1.velocity, body2.normal) * body2.normal);
@@ -105,20 +105,17 @@ bool collides(SphereBody& body1, ModelBody& body2, real_t collision_damping)
 		// calculate normal
 		Vector3 normal_plane = normalize(cross(v_b.position - v_a.position, v_c.position - v_a.position));
 
-		real_t distance = dot(body1.position - body2.position, normal_plane);
-		Vector3 hit_point = body1.position - distance * normal_plane;
+		real_t distance = dot(body1.position - (body2.position + v_a.position), normal_plane);
+		Vector3 projection_point = body1.position - distance * normal_plane;
 
 		// relative velocity of one object to the other is positive
-		if (relative_velocity(body1, body2, hit_point) >= 0) {
-			Vector3 vertices_pos[3] { v_a.position, v_b.position, v_c.position };
+		if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
+			Vector3 vertices_pos[3] { body2.position + v_a.position, body2.position + v_b.position, body2.position + v_c.position };
 			
 			// check distance and check whether the hit_point within barycentric coordinates
 			real_t beta, gamma;
-			if (abs(distance) <= body1.radius && is_within_barycentric(hit_point, vertices_pos, beta, gamma)) {
-				// calculate normal
-				Vector3 normal = ((real_t(1) - beta - gamma)*v_a.normal) + (beta*v_b.normal) + (gamma*v_c.normal);
-
-				Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal) * normal);
+			if (abs(distance) <= body1.radius && is_within_barycentric(projection_point, vertices_pos, beta, gamma)) {
+				Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal_plane) * normal_plane);
 
 				// update velocity
 				body1.velocity = damping(v_new, collision_damping);
@@ -131,8 +128,8 @@ bool collides(SphereBody& body1, ModelBody& body2, real_t collision_damping)
 	return is_collide;
 }
 
-real_t relative_velocity(SphereBody& body1, Body& body2, Vector3 position) {
-	Vector3 r_v = body1.velocity - body2.velocity;
+real_t relative_velocity(SphereBody& body1, Vector3 velocity, Vector3 position) {
+	Vector3 r_v = body1.velocity - velocity;
 	return dot(normalize(r_v), normalize(position - body1.position));
 }
 

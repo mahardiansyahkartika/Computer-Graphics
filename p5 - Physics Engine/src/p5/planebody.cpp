@@ -6,6 +6,8 @@ namespace _462 {
 PlaneBody::PlaneBody()
 {
     orientation = Quaternion::Identity();
+	velocity = Vector3::Zero();
+	angular_velocity = Vector3::Zero();
 }
 
 Vector3 PlaneBody::step_position( real_t dt, real_t motion_damping )
