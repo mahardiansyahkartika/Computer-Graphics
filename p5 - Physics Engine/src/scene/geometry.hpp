@@ -4,6 +4,7 @@
 #include "math/vector.hpp"
 #include "math/color.hpp"
 #include "math/quaternion.hpp"
+#include "math/matrix.hpp"
 
 namespace _462 {
 
@@ -29,10 +30,18 @@ public:
     // The world scale of the object.
     Vector3 scale;
 
+	// Forward transformation matrix
+	Matrix4 mat;
+	// Inverse transformation matrix
+	Matrix4 invMat;
+	// Normal transformation matrix
+	Matrix3 normMat;
+
     /** 
      * Renders this geometry using OpenGL in the local coordinate space.
      */
     virtual void render() const = 0;
+	virtual bool initialize();
 };
 
 }

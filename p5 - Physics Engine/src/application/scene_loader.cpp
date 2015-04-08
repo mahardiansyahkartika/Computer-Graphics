@@ -369,6 +369,7 @@ static void parse_geom_sphere( const MaterialMap& matmap, BodyMap& bodies, Physi
     parse_elem( elem, true,  STR_RADIUS,  &geom->radius );
     parse_lookup_data( matmap, elem, STR_MATERIAL, &geom->material );
     const TiXmlElement* child = elem->FirstChildElement( STR_BODY );
+	geom->initialize();
     if ( child ) {
         SphereBody* body = new SphereBody( geom );
         check_mem( body );
@@ -403,6 +404,7 @@ static void parse_geom_triangle( const MaterialMap& matmap, const TriVertMap& tv
         throw std::exception();
     }
     child = elem->FirstChildElement( STR_BODY );
+	geom->initialize();
     if ( child ) {
         TriangleBody* body = new TriangleBody(geom);
         check_mem( body );
@@ -418,7 +420,8 @@ static void parse_geom_model( const MaterialMap& matmap, const MeshMap& meshmap,
     parse_lookup_data( meshmap, elem, STR_MESH, &geom->mesh );
     parse_lookup_data( matmap, elem, STR_MATERIAL, &geom->material );
     const TiXmlElement* child = elem->FirstChildElement ( STR_BODY );
-    if ( child ) {
+	geom->initialize();
+	if ( child ) {
         ModelBody* body = new ModelBody( geom );
         check_mem( body );
         parse_modelbody( child, body );
@@ -577,10 +580,10 @@ bool load_scene( Scene* scene, const char* filename )
         while ( elem ) {
             Model* geom = new Model();
             check_mem( geom );
-            scene->add_geometry( geom );
-            parse_geom_model( materials, meshes, bodies, scene->get_physics(), elem, geom );
-            elem = elem->NextSiblingElement( STR_MODEL );
-        }
+			scene->add_geometry(geom);
+			parse_geom_model(materials, meshes, bodies, scene->get_physics(), elem, geom);
+			elem = elem->NextSiblingElement(STR_MODEL);
+		}
 
         // TODO add you own geometries here
 

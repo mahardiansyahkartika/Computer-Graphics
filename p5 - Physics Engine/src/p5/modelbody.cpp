@@ -6,6 +6,8 @@ namespace _462 {
 ModelBody::ModelBody( Model* geom )
 {
     model = geom;
+	position = geom->position;
+	orientation = geom->orientation;
 }
 
 Vector3 ModelBody::step_position( real_t dt, real_t motion_damping )
