@@ -422,10 +422,6 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
 
 int main( int argc, char* argv[] )
 {
-	argc = 2;
-	argv = new char*[argc];
-	argv[1] = "scenes/cube_collision.scene";
-
     Options opt;
 
     Matrix3 mat;
