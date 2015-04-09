@@ -17,7 +17,9 @@ bool collides( SphereBody& body1, ModelBody& body2, real_t collision_damping );
 // additional functions
 real_t relative_velocity(SphereBody& body1, Vector3 velocity, Vector3 position);
 Vector3 damping(Vector3 velocity, real_t collision_damping);
-bool is_within_barycentric(const Vector3 point, const Vector3 vertices[3], real_t& beta, real_t& gamma);
+bool is_within_barycentric(const Vector3 point, const Vector3 vertices[3]);
+bool is_hit_triangle(SphereBody& body1, const Vector3 vertices[3]);
+real_t minimum_distance(Vector3 p, Vector3 v, Vector3 w);
 }
 
 #endif
