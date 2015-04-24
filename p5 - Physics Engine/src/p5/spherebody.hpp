@@ -6,6 +6,12 @@
 
 namespace _462 {
 
+struct Derivative
+{
+	float dx;
+	float dv;
+};
+
 class Sphere;
 
 class SphereBody : public Body
@@ -16,6 +22,7 @@ public:
     real_t mass;
     Vector3 force;
     Vector3 torque;
+	Derivative derivative;
 
     SphereBody( Sphere* geom );
     virtual ~SphereBody() { }
