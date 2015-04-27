@@ -42,8 +42,13 @@ public:
 	// additional functions
 	void check_collision();
 	void update_geometries(real_t dt);
-	void apply_forces(const Vector3& f, const Vector3& offset);
-	void clear_forces();
+
+	// RK4
+	void integrate(real_t dt);
+	Derivative evaluate(SphereBody* body, const State &initial);
+	Derivative evaluate(SphereBody* body, const State &initial, float dt, const Derivative &d);
+	void apply_forces(SphereBody* body, const State &initial);
+	Quaternion add_quaternion(Quaternion first_orientation, Vector3 delta_orientation);
 private:
     typedef std::vector< Spring* > SpringList;
     typedef std::vector< SphereBody* > SphereList;

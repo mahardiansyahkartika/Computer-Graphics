@@ -16,15 +16,15 @@ Spring::Spring()
     damping = 0.0;
 }
 
-void Spring::step( real_t dt )
+void Spring::step(const State &initial)
 {
     // TODO apply forces to attached bodies
 
 	// adjust both offset by their local coordinates
-	Vector3 offset1 = body1->orientation * body1_offset;
+	Vector3 offset1 = initial.rot * body1_offset;
 	Vector3 offset2 = body2->orientation * body2_offset;
 	// compute the attachement points
-	Vector3 point1 = body1->position + offset1;
+	Vector3 point1 = initial.pos + offset1;
 	Vector3 point2 = body2->position + offset2;
 	// compute directions for both bodies
 	Vector3 dir1 = point1 - point2;
@@ -32,7 +32,7 @@ void Spring::step( real_t dt )
 	// compute the distance between two bodies
 	real_t dist = length(point1 - point2);
 	// compute relative velocity of both bodies
-	real_t vel1 = dot(body1->velocity, normalize(dir1));
+	real_t vel1 = dot(initial.vel, normalize(dir1));
 	real_t vel2 = dot(body2->velocity, normalize(dir2));
 	// compute force for both bodies
 	Vector3 force1 = (-constant*(length(dir1) - equilibrium) - damping*vel1) * normalize(dir1);

@@ -28,13 +28,8 @@ Vector3 SphereBody::step_position( real_t dt, real_t motion_damping )
     // scheme
     // TODO return the delta in position dt in the future
 
-	velocity += (force / mass) * dt;
-	velocity *= 1.0 - motion_damping;
-
-	Vector3 delta_position = velocity * dt;
-	position += delta_position;
-
 	// update graphical object
+	Vector3 delta_position = position - sphere->position;
 	sphere->position = position;
 
     return delta_position;
@@ -50,30 +45,11 @@ Vector3 SphereBody::step_orientation( real_t dt, real_t motion_damping )
     // vec.y = rotation along y axis
     // vec.z = rotation along z axis
 
-	// moment of inertia
-	real_t I = 0.4 * mass * radius * radius;
-	angular_velocity += (torque / I) * dt;
-	angular_velocity *= 1.0 - motion_damping;
-
-	Vector3 delta_orientation = angular_velocity * dt;
-
-	// pitch
-	Vector3 axis_pitch = orientation * Vector3::UnitX();
-	real_t radian_pitch = delta_orientation.x;
-	orientation = normalize(Quaternion(axis_pitch, radian_pitch) * orientation);
-	// yaw
-	Vector3 axis_yaw = orientation * Vector3::UnitY();
-	real_t radian_yaw = delta_orientation.y;
-	orientation = normalize(Quaternion(axis_yaw, radian_yaw) * orientation);
-	// roll
-	Vector3 axis_roll = orientation * Vector3::UnitZ();
-	real_t radian_roll = delta_orientation.z;
-	orientation = normalize(Quaternion(axis_roll, radian_roll) * orientation);
-
 	// update graphical object
+	Vector3 delta_rotation = angular_velocity * dt;
 	sphere->orientation = orientation;
 
-    return delta_orientation;
+	return delta_rotation;
 }
 
 void SphereBody::apply_force( const Vector3& f, const Vector3& offset )

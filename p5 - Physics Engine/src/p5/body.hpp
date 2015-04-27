@@ -8,10 +8,26 @@
 
 namespace _462 {
 
+struct State
+{
+	Vector3 pos;
+	Vector3 vel;
+	Quaternion rot;
+	Vector3 ang_vel;
+};
+
+struct Derivative
+{
+	Vector3 d_pos;
+	Vector3 d_vel;
+	Quaternion d_rot;
+	Vector3 d_ang_vel;
+};
+
 class Body
 {
 public:
-    int id;
+	int id;
     int type;
     Vector3 position;
     Quaternion orientation;

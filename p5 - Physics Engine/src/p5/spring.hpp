@@ -10,7 +10,8 @@ class Spring
 public:
     Spring();
     virtual ~Spring() {};
-    void step( real_t dt );
+	void step(const State &initial);
+	void assign(  );
 
     real_t constant;
     real_t equilibrium;
