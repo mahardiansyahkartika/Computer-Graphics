@@ -25,14 +25,22 @@ void Physics::step( real_t dt )
     // change the position/orientation of the graphical object that represents
     // it
 
-	// Check Collision
-	check_collision();
+	// force by spring
+	for (size_t i = 0; i < num_springs(); ++i) {
+		springs[i]->step(dt);
+	}
 
 	// Apply gravity force
 	apply_forces(gravity, Vector3::Zero());
 
+	// Check Collision
+	check_collision();
+
 	// Update Step & Orientation
 	update_geometries(dt);
+
+	// clear all forces
+	clear_forces();
 }
 
 void Physics::apply_forces(const Vector3& f, const Vector3& offset) {
@@ -40,17 +48,20 @@ void Physics::apply_forces(const Vector3& f, const Vector3& offset) {
 	for (size_t i = 0; i < num_spheres(); ++i) {
 		spheres[i]->apply_force(f, offset);
 	}
-	// triangles
-	for (size_t i = 0; i < num_triangles(); ++i) {
-		triangles[i]->apply_force(f, offset);
+}
+
+void Physics::clear_forces() {
+	// spheres
+	for (size_t i = 0; i < num_spheres(); ++i) {
+		spheres[i]->clear_force();
 	}
-	// models
-	for (size_t i = 0; i < num_models(); ++i) {
-		models[i]->apply_force(f, offset);
-	}
-	// planes
-	for (size_t i = 0; i < num_planes(); ++i) {
-		planes[i]->apply_force(f, offset);
+}
+
+void Physics::update_geometries(real_t dt) {
+	// spheres
+	for (size_t i = 0; i < num_spheres(); ++i) {
+		spheres[i]->step_position(dt, collision_damping);
+		spheres[i]->step_orientation(dt, collision_damping);
 	}
 }
 
@@ -73,29 +84,6 @@ void Physics::check_collision() {
 		for (size_t j = 0; j < num_planes(); ++j) {
 			collides(*spheres[i], *planes[j], collision_damping);
 		}
-	}
-}
-
-void Physics::update_geometries(real_t dt) {
-	// spheres
-	for (size_t i = 0; i < num_spheres(); ++i) {
-		spheres[i]->step_position(dt, collision_damping);
-		spheres[i]->step_orientation(dt, collision_damping);
-	}
-	// triangles
-	for (size_t i = 0; i < num_triangles(); ++i) {
-		triangles[i]->step_position(dt, collision_damping);
-		triangles[i]->step_orientation(dt, collision_damping);
-	}
-	// models
-	for (size_t i = 0; i < num_models(); ++i) {
-		models[i]->step_position(dt, collision_damping);
-		models[i]->step_orientation(dt, collision_damping);
-	}
-	// planes
-	for (size_t i = 0; i < num_planes(); ++i) {
-		planes[i]->step_position(dt, collision_damping);
-		planes[i]->step_orientation(dt, collision_damping);
 	}
 }
 

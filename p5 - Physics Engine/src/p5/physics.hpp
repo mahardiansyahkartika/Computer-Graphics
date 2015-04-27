@@ -43,6 +43,7 @@ public:
 	void check_collision();
 	void update_geometries(real_t dt);
 	void apply_forces(const Vector3& f, const Vector3& offset);
+	void clear_forces();
 private:
     typedef std::vector< Spring* > SpringList;
     typedef std::vector< SphereBody* > SphereList;

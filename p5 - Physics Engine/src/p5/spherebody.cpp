@@ -29,6 +29,7 @@ Vector3 SphereBody::step_position( real_t dt, real_t motion_damping )
     // TODO return the delta in position dt in the future
 
 	velocity += (force / mass) * dt;
+	velocity *= 1.0 - motion_damping;
 
 	Vector3 delta_position = velocity * dt;
 	position += delta_position;
@@ -48,6 +49,11 @@ Vector3 SphereBody::step_orientation( real_t dt, real_t motion_damping )
     // vec.x = rotation along x axis
     // vec.y = rotation along y axis
     // vec.z = rotation along z axis
+
+	// moment of inertia
+	real_t I = 0.4 * mass * radius * radius;
+	angular_velocity += (torque / I) * dt;
+	angular_velocity *= 1.0 - motion_damping;
 
 	Vector3 delta_orientation = angular_velocity * dt;
 
@@ -73,7 +79,25 @@ Vector3 SphereBody::step_orientation( real_t dt, real_t motion_damping )
 void SphereBody::apply_force( const Vector3& f, const Vector3& offset )
 {
     // TODO apply force/torque to sphere
-	force = f;
+
+	// if offset is zero (less than epsilon), only linear component
+	if (length(offset) < 1e-9) {
+		// all force goes to linear
+		force += f;
+		// torque is zero
+		torque += Vector3::Zero();
+	} else { // if offset is not equal zero, both linear and angular components
+		// linear term is the projection of force on the offset
+		force += dot(f, offset) * offset / length(offset) / length(offset);
+		// angular term is cross product between force and offset
+		// NOTE: order matters
+		torque += cross(offset, f);
+	}
+}
+
+void SphereBody::clear_force() {
+	force = Vector3::Zero();
+	torque = Vector3::Zero();
 }
 
 }
