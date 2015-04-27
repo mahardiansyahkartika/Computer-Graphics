@@ -347,18 +347,27 @@
     <model material="cube" mesh="cube">
         <position x="0.0" y="1.0" z="0.0"/>
         <orientation a="1.8" x="0.0" y="1.0" z="0.0"/>
+        <body>
+            <id i="21"/>
+        </body>
     </model>
 
     <model material="cube" mesh="cube">
         <position x="-5.0" y="6.0" z="-5.0"/>
         <scale x="2.0" y="2.0" z="2.0"/>
         <orientation a="3.14159" x="0.0" y="0.0" z="1.0"/>
+        <body>
+            <id i="22"/>
+        </body>
     </model>
 
     <model material="cube" mesh="cube">
         <position x="5.0" y="10.0" z="3.0"/>
         <scale x="1.5" y="1.5" z="1.5"/>
         <orientation a="-2.4" x="0.0" y="1.0" z="0.0"/>
+        <body>
+            <id i="23"/>
+        </body>
     </model>
 
 
