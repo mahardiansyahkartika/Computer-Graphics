@@ -67,20 +67,19 @@ public:
     /// Renders the mesh using opengl.
     void render() const;
 
+	typedef std::vector< MeshTriangle > MeshTriangleList;
+	typedef std::vector< MeshVertex > MeshVertexList;
+
+	// The list of all triangles in this model.
+	MeshTriangleList triangles;
+
+	// The list of all vertices in this model.
+	MeshVertexList vertices;
+
+	bool has_tcoords;
+	bool has_normals;
+
 private:
-
-    typedef std::vector< MeshTriangle > MeshTriangleList;
-    typedef std::vector< MeshVertex > MeshVertexList;
-
-    // The list of all triangles in this model.
-    MeshTriangleList triangles;
-
-    // The list of all vertices in this model.
-    MeshVertexList vertices;
-
-    bool has_tcoords;
-    bool has_normals;
-
     typedef std::vector< float > FloatList;
     typedef std::vector< unsigned int > IndexList;
 

@@ -1,2 +1,2 @@
-add_library(scene material.cpp mesh.cpp model.cpp scene.cpp sphere.cpp
+add_library(scene bound.cpp material.cpp mesh.cpp meshtree.cpp model.cpp scene.cpp sphere.cpp
             triangle.cpp geometry.cpp)

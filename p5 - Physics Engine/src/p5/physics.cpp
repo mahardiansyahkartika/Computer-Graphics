@@ -103,46 +103,12 @@ void Physics::integrate(real_t dt) {
 		const Vector3 d_vel_dt = 1.0f / 6.0f * (k1.d_vel + 2.0f*(k2.d_vel + k3.d_vel) + k4.d_vel);
 		const Vector3 d_ang_vel_dt = 1.0f / 6.0f * (k1.d_ang_vel + 2.0f*(k2.d_ang_vel + k3.d_ang_vel) + k4.d_ang_vel);
 
+		// position
 		spheres[i]->position += d_pos_dt * dt;
 		spheres[i]->velocity += d_vel_dt * dt;
+		// orientation
 		spheres[i]->angular_velocity += d_ang_vel_dt * dt;
 		spheres[i]->orientation = add_quaternion(spheres[i]->orientation, spheres[i]->angular_velocity * dt);
-
-		/*
-		// POSITION
-		spheres[i]->velocity += RK4_1(spheres[i]->force / spheres[i]->mass, dt);
-		Vector3 delta_position = RK4_2(spheres[i]->velocity, spheres[i]->force / spheres[i]->mass, dt);
-		spheres[i]->position += delta_position;
-
-		// ORIENTATION
-		// moment of inertia
-		real_t I = 0.4 * spheres[i]->mass * spheres[i]->radius * spheres[i]->radius;
-
-		spheres[i]->angular_velocity += RK4_1(spheres[i]->torque / I, dt);
-		Vector3 delta_orientation = RK4_2(spheres[i]->angular_velocity, spheres[i]->torque / I, dt);
-
-		// pitch, yaw, roll
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitX(), delta_orientation.x) * spheres[i]->orientation);
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitY(), delta_orientation.y) * spheres[i]->orientation);
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitZ(), delta_orientation.z) * spheres[i]->orientation);
-
-		// POSITION
-		spheres[i]->velocity += (spheres[i]->force / spheres[i]->mass) * dt;
-
-		Vector3 delta_position = spheres[i]->velocity * dt;
-		spheres[i]->position += delta_position;
-
-		// ORIENTATION
-		// moment of inertia
-		real_t I = 0.4 * spheres[i]->mass * spheres[i]->radius * spheres[i]->radius;
-		spheres[i]->angular_velocity += (spheres[i]->torque / I) * dt;
-
-		Vector3 delta_orientation = spheres[i]->angular_velocity * dt;
-		// pitch, yaw, roll
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitX(), delta_orientation.x) * spheres[i]->orientation);
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitY(), delta_orientation.y) * spheres[i]->orientation);
-		spheres[i]->orientation = normalize(Quaternion(spheres[i]->orientation * Vector3::UnitZ(), delta_orientation.z) * spheres[i]->orientation);
-		*/
 	}
 }
 
