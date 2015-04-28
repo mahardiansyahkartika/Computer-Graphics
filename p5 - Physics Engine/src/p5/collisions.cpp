@@ -142,7 +142,7 @@ real_t relative_velocity(SphereBody& body1, Vector3 velocity, Vector3 position) 
 
 Vector3 damping(Vector3 velocity, real_t collision_damping) {
 	// check epsilon, so that we don't keep on making minor changes
-	if (length(velocity) <= 0.01f)
+	if (length(velocity) < 1e-9)
 		return Vector3::Zero();
 
 	return velocity - collision_damping * velocity;

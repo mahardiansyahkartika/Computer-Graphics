@@ -3,6 +3,7 @@
 
 #include "math/vector.hpp"
 #include "math/quaternion.hpp"
+#include "scene/bound.hpp"
 #include <exception>
 #include <iostream>
 
@@ -33,6 +34,8 @@ public:
     Quaternion orientation;
     Vector3 velocity;
     Vector3 angular_velocity;
+
+	Bound* bound;
 
     virtual ~Body() { }
     virtual Vector3 step_position( real_t dt, real_t motion_damping ) = 0;

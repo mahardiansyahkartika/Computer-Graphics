@@ -11,6 +11,7 @@
 #include "scene/material.hpp"
 #include "scene/geometry.hpp"
 #include "scene/mesh.hpp"
+#include "scene/meshtree.hpp"
 
 namespace _462 {
 
@@ -22,6 +23,7 @@ class Model : public Geometry
 public:
 
     const Mesh* mesh;
+	const MeshTree *tree;
     const Material* material;
 
     Model();
