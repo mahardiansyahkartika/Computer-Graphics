@@ -1,4 +1,5 @@
 #include "p5/collisions.hpp"
+#include "scene/meshtree.hpp"
 
 namespace _462 {
 
@@ -35,30 +36,34 @@ bool collides(SphereBody& body1, TriangleBody& body2, real_t collision_damping)
 {
 	// TODO detect collision. If there is one, update velocity
 
-	// get the triangle vertices
-	Vector3 v_a = body2.vertices[0];
-	Vector3 v_b = body2.vertices[1];
-	Vector3 v_c = body2.vertices[2];
+	// check bounding box
+	if (body2.triangle->boundBox.collides(body1.position, body1.radius)) {
+		// get the triangle vertices
+		Vector3 v_a = body2.vertices[0];
+		Vector3 v_b = body2.vertices[1];
+		Vector3 v_c = body2.vertices[2];
 
-	// calculate normal
-	Vector3 normal = normalize(cross(v_b - v_a, v_c - v_a));
+		// calculate normal
+		Vector3 normal = normalize(cross(v_b - v_a, v_c - v_a));
 
-	real_t distance = dot(body1.position - body2.position, normal);
-	Vector3 projection_point = body1.position - distance * normal;
+		real_t distance = dot(body1.position - body2.position, normal);
+		Vector3 projection_point = body1.position - distance * normal;
 
-	// relative velocity of one object to the other is positive
-	if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
-		// check distance and check whether the hit_point within barycentric coordinates
-		if (abs(distance) <= body1.radius && (is_within_barycentric(projection_point, body2.vertices) || is_hit_triangle(body1, body2.vertices))) {
-			Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal) * normal);
+		// relative velocity of one object to the other is positive
+		if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
+			// check distance and check whether the hit_point within barycentric coordinates
+			if (abs(distance) <= body1.radius && (is_within_barycentric(projection_point, body2.vertices) || is_hit_triangle(body1, body2.vertices))) {
+				Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal) * normal);
 
-			// update velocity
-			body1.velocity = damping(v_new, collision_damping);
+				// update velocity
+				body1.velocity = damping(v_new, collision_damping);
 
-			return true;
+				return true;
+			}
 		}
 	}
-    return false;
+
+	return false;
 }
 
 bool collides(SphereBody& body1, PlaneBody& body2, real_t collision_damping)
@@ -90,49 +95,68 @@ bool collides(SphereBody& body1, ModelBody& body2, real_t collision_damping)
 	// iterate through all the triangles in the mesh
 	bool is_collide = false;
 
-	const Mesh* mesh = body2.model->mesh;
-		
-	for (size_t i = 0; i < mesh->num_triangles(); ++i) {
-		// get the triangle vertices
-		MeshTriangle idxTriangle = mesh->get_triangles()[i];
-		const MeshVertex* vertices = mesh->get_vertices();
+	// check collision with tree
+	collides_node(body1, body2, collision_damping, body2.model->tree->root, is_collide);
 
-		Vector3 p_a = vertices[idxTriangle.vertices[0]].position;
-		Vector3 p_b = vertices[idxTriangle.vertices[1]].position;
-		Vector3 p_c = vertices[idxTriangle.vertices[2]].position;
+	return is_collide;
+}
 
-		// multiply with transformation matrix
-		Vector4 t_p_a = body2.model->mat * Vector4(p_a.x, p_a.y, p_a.z, 0);
-		Vector4 t_p_b = body2.model->mat * Vector4(p_b.x, p_b.y, p_b.z, 0);
-		Vector4 t_p_c = body2.model->mat * Vector4(p_c.x, p_c.y, p_c.z, 0);
+void collides_node(SphereBody& body1, ModelBody& body2, real_t collision_damping, MeshTreeNode* node, bool &is_collide) {
+	if (node == NULL || is_collide) {
+		return;
+	}
 
-		Vector3 v_a = Vector3(t_p_a.x, t_p_a.y, t_p_a.z);
-		Vector3 v_b = Vector3(t_p_b.x, t_p_b.y, t_p_b.z);
-		Vector3 v_c = Vector3(t_p_c.x, t_p_c.y, t_p_c.z);
+	// collide with bounding box
+	if (node->bbox->collides(body1.position - body2.position, body1.radius)) {
+		// still has child
+		if (node->left != NULL || node->right != NULL) {
+			collides_node(body1, body2, collision_damping, node->left, is_collide);
+			collides_node(body1, body2, collision_damping, node->right, is_collide);
+		}
+		else { // we have reached leaf
+			const Mesh* mesh = body2.model->mesh;
 
-		// calculate normal
-		Vector3 normal_plane = normalize(cross(v_b - v_a, v_c- v_a));
+			// iterate all triangles in node
+			for (size_t idxTri = 0; idxTri < node->triangles.size(); ++idxTri) {
+				// get the triangle vertices
+				const MeshVertex* vertices = mesh->get_vertices();
 
-		real_t distance = dot(body1.position - (body2.position + v_a), normal_plane);
-		Vector3 projection_point = body1.position - distance * normal_plane;
+				Vector3 p_a = vertices[node->triangles[idxTri].vertices[0]].position;
+				Vector3 p_b = vertices[node->triangles[idxTri].vertices[1]].position;
+				Vector3 p_c = vertices[node->triangles[idxTri].vertices[2]].position;
 
-		// relative velocity of one object to the other is positive
-		if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
-			Vector3 vertices_pos[3] { body2.position + v_a, body2.position + v_b, body2.position + v_c };
-			
-			// check distance and check whether the hit_point within barycentric coordinates
-			if (abs(distance) <= body1.radius && (is_within_barycentric(projection_point, vertices_pos) || is_hit_triangle(body1, vertices_pos))) {
-				Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal_plane) * normal_plane);
+				// multiply with transformation matrix
+				Vector4 t_p_a = body2.model->mat * Vector4(p_a.x, p_a.y, p_a.z, 0);
+				Vector4 t_p_b = body2.model->mat * Vector4(p_b.x, p_b.y, p_b.z, 0);
+				Vector4 t_p_c = body2.model->mat * Vector4(p_c.x, p_c.y, p_c.z, 0);
 
-				// update velocity
-				body1.velocity = damping(v_new, collision_damping);
+				Vector3 v_a = Vector3(t_p_a.x, t_p_a.y, t_p_a.z);
+				Vector3 v_b = Vector3(t_p_b.x, t_p_b.y, t_p_b.z);
+				Vector3 v_c = Vector3(t_p_c.x, t_p_c.y, t_p_c.z);
 
-				is_collide = true;
+				// calculate normal
+				Vector3 normal_plane = normalize(cross(v_b - v_a, v_c - v_a));
+
+				real_t distance = dot(body1.position - (body2.position + v_a), normal_plane);
+				Vector3 projection_point = body1.position - distance * normal_plane;
+
+				// relative velocity of one object to the other is positive
+				if (relative_velocity(body1, body2.velocity, projection_point) >= 0) {
+					Vector3 vertices_pos[3] { body2.position + v_a, body2.position + v_b, body2.position + v_c };
+
+					// check distance and check whether the hit_point within barycentric coordinates
+					if (abs(distance) <= body1.radius && (is_within_barycentric(projection_point, vertices_pos) || is_hit_triangle(body1, vertices_pos))) {
+						Vector3 v_new = body1.velocity - (real_t(2) * dot(body1.velocity, normal_plane) * normal_plane);
+
+						// update velocity
+						body1.velocity = damping(v_new, collision_damping);
+
+						is_collide = true;
+					}
+				}
 			}
 		}
 	}
-
-	return is_collide;
 }
 
 real_t relative_velocity(SphereBody& body1, Vector3 velocity, Vector3 position) {

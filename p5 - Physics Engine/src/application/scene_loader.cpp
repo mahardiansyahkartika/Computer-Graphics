@@ -369,7 +369,6 @@ static void parse_geom_sphere( const MaterialMap& matmap, BodyMap& bodies, Physi
     parse_elem( elem, true,  STR_RADIUS,  &geom->radius );
     parse_lookup_data( matmap, elem, STR_MATERIAL, &geom->material );
     const TiXmlElement* child = elem->FirstChildElement( STR_BODY );
-	geom->initialize();
     if ( child ) {
         SphereBody* body = new SphereBody( geom );
         check_mem( body );
@@ -404,7 +403,6 @@ static void parse_geom_triangle( const MaterialMap& matmap, const TriVertMap& tv
         throw std::exception();
     }
     child = elem->FirstChildElement( STR_BODY );
-	geom->initialize();
     if ( child ) {
         TriangleBody* body = new TriangleBody(geom);
         check_mem( body );
@@ -420,14 +418,13 @@ static void parse_geom_model( const MaterialMap& matmap, const MeshMap& meshmap,
     parse_lookup_data( meshmap, elem, STR_MESH, &geom->mesh );
     parse_lookup_data( matmap, elem, STR_MATERIAL, &geom->material );
     const TiXmlElement* child = elem->FirstChildElement ( STR_BODY );
-	geom->initialize();
 	if ( child ) {
         ModelBody* body = new ModelBody( geom );
         check_mem( body );
         parse_modelbody( child, body );
         bodies[body->id] = body;
         phys->add_model(body);
-    }
+	}
 }
 
 static void parse_spring( BodyMap& bmap, const TiXmlElement* elem, Spring* spring )

@@ -19,39 +19,49 @@ MeshTreeNode::MeshTreeNode() {
 	right = NULL;
 }
 
-MeshTreeNode::MeshTreeNode(const ModelBody *model_body, std::vector<MeshTriangle> triangles) {
+MeshTreeNode::MeshTreeNode(const Mesh* mesh, std::vector<MeshTriangle> triangles, Matrix4 mat) {
 	left = NULL;
 	right = NULL;
 	// copy triangles
 	for (size_t i = 0; i < triangles.size(); ++i) {
 		this->triangles.push_back(triangles[i]);
 	}
-	bbox = createBBox(model_body);
+	bbox = createBBox(mesh, mat);
 }
 
-Bound* MeshTreeNode::createBBox(const ModelBody *model_body) {
+Bound* MeshTreeNode::createBBox(const Mesh* mesh, Matrix4 mat) {
 	Bound* bbox = new Bound();
 
 	for (size_t i = 0; i < triangles.size(); ++i) {
-		Bound bound = createTriangleBound(model_body, triangles[i]);
+		Bound bound = createTriangleBound(mesh, triangles[i], mat);
 		bbox->expand(bound);
 	}
 	return bbox;
 }
 
-Bound MeshTreeNode::createTriangleBound(const ModelBody *model_body, MeshTriangle triangle) {
-	const Mesh* mesh = model_body->model->mesh;
+Bound MeshTreeNode::createTriangleBound(const Mesh* mesh, MeshTriangle triangle, Matrix4 mat) {
+	Vector4 mat_vertices[] = {
+		mat * Vector4(mesh->vertices[triangle.vertices[0]].position.x, mesh->vertices[triangle.vertices[0]].position.y, mesh->vertices[triangle.vertices[0]].position.z, 0),
+		mat * Vector4(mesh->vertices[triangle.vertices[1]].position.x, mesh->vertices[triangle.vertices[1]].position.y, mesh->vertices[triangle.vertices[1]].position.z, 0),
+		mat * Vector4(mesh->vertices[triangle.vertices[2]].position.x, mesh->vertices[triangle.vertices[2]].position.y, mesh->vertices[triangle.vertices[2]].position.z, 0)
+	};
+	
+	Vector3 vertices[] = { 
+		Vector3(mat_vertices[0].x, mat_vertices[0].y, mat_vertices[0].z),
+		Vector3(mat_vertices[1].x, mat_vertices[1].y, mat_vertices[1].z),
+		Vector3(mat_vertices[2].x, mat_vertices[2].y, mat_vertices[2].z)
+	};
 
-	Vector3 min = mesh->vertices[triangle.vertices[0]].position;
-	Vector3 max = mesh->vertices[triangle.vertices[0]].position;
+	Vector3 min = vertices[0];
+	Vector3 max = vertices[0];
 
 	for (int i = 1; i < 3; ++i) {
-		if (mesh->vertices[triangle.vertices[i]].position.x < min.x) min.x = mesh->vertices[triangle.vertices[i]].position.x;
-		if (mesh->vertices[triangle.vertices[i]].position.y < min.y) min.y = mesh->vertices[triangle.vertices[i]].position.y;
-		if (mesh->vertices[triangle.vertices[i]].position.z < min.z) min.z = mesh->vertices[triangle.vertices[i]].position.z;
-		if (mesh->vertices[triangle.vertices[i]].position.x > max.x) max.x = mesh->vertices[triangle.vertices[i]].position.x;
-		if (mesh->vertices[triangle.vertices[i]].position.y > max.y) max.y = mesh->vertices[triangle.vertices[i]].position.y;
-		if (mesh->vertices[triangle.vertices[i]].position.z > max.z) max.z = mesh->vertices[triangle.vertices[i]].position.z;
+		if (vertices[i].x < min.x) min.x = vertices[i].x;
+		if (vertices[i].y < min.y) min.y = vertices[i].y;
+		if (vertices[i].z < min.z) min.z = vertices[i].z;
+		if (vertices[i].x > max.x) max.x = vertices[i].x;
+		if (vertices[i].y > max.y) max.y = vertices[i].y;
+		if (vertices[i].z > max.z) max.z = vertices[i].z;
 	}
 
 	return Bound(min, max);
@@ -67,16 +77,14 @@ MeshTree::MeshTree() {
 	root = NULL;
 }
 
-MeshTree::MeshTree(const ModelBody *model_body) {
-	const Mesh* mesh = model_body->model->mesh;
-
+MeshTree::MeshTree(const Mesh* mesh, Matrix4 mat) {
 	std::vector<MeshTriangle> triangles;
 	for (size_t i = 0; i < mesh->triangles.size(); ++i) {
 		triangles.push_back(mesh->triangles[i]);
 	}
 
 	// create tree
-	root = build(model_body, triangles, 1);
+	root = build(mesh, triangles, mat, 1);
 }
 
 MeshTree::~MeshTree() {
@@ -94,9 +102,7 @@ void MeshTree::freeNode(MeshTreeNode* node) {
 	}
 }
 
-Vector3 MeshTree::getTriangleMidPoint(const ModelBody *model_body, MeshTriangle triangle) {
-	const Mesh* mesh = model_body->model->mesh;
-
+Vector3 MeshTree::getTriangleMidPoint(const Mesh *mesh, MeshTriangle triangle) {
 	Vector3 middlePoint = Vector3::Zero();
 
 	for (int i = 0; i < 3; ++i) {
@@ -106,15 +112,13 @@ Vector3 MeshTree::getTriangleMidPoint(const ModelBody *model_body, MeshTriangle 
 	return middlePoint;
 }
 
-MeshTreeNode* MeshTree::build(const ModelBody *model_body, std::vector<MeshTriangle> triangles, int depth) {
-	const Mesh* mesh = model_body->model->mesh;
-
+MeshTreeNode* MeshTree::build(const Mesh *mesh, std::vector<MeshTriangle> triangles, Matrix4 mat, int depth) {
 	// end of recursion
 	if (triangles.size() <= 0) {
 		return NULL;
 	}
 
-	MeshTreeNode* node = new MeshTreeNode(model_body, triangles);
+	MeshTreeNode* node = new MeshTreeNode(mesh, triangles, mat);
 
 	// reach max depth or single triangle then create leaf
 	if (triangles.size() == 1 || depth >= MAX_TREE_DEPTH) {
@@ -125,7 +129,7 @@ MeshTreeNode* MeshTree::build(const ModelBody *model_body, std::vector<MeshTrian
 	// find mid point of triangles
 	Vector3 midPoint = Vector3::Zero();
 	for (size_t i = 0; i < triangles.size(); ++i) {
-		midPoint += getTriangleMidPoint(model_body, triangles[i]) * (real_t(1) / real_t(triangles.size()));
+		midPoint += getTriangleMidPoint(mesh, triangles[i]) * (real_t(1) / real_t(triangles.size()));
 	}
 
 	std::vector<MeshTriangle> leftTriangles;
@@ -136,13 +140,13 @@ MeshTreeNode* MeshTree::build(const ModelBody *model_body, std::vector<MeshTrian
 	for (size_t i = 0; i < triangles.size(); ++i) {
 		switch (longAxis) {
 		case 0: // x-axis
-			midPoint.x >= getTriangleMidPoint(model_body, triangles[i]).x ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
+			midPoint.x >= getTriangleMidPoint(mesh, triangles[i]).x ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
 			break;
 		case 1: // y-axis
-			midPoint.y >= getTriangleMidPoint(model_body, triangles[i]).y ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
+			midPoint.y >= getTriangleMidPoint(mesh, triangles[i]).y ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
 			break;
 		case 2: // z-axis
-			midPoint.z >= getTriangleMidPoint(model_body, triangles[i]).z ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
+			midPoint.z >= getTriangleMidPoint(mesh, triangles[i]).z ? rightTriangles.push_back(triangles[i]) : leftTriangles.push_back(triangles[i]);
 			break;
 		}
 	}
@@ -152,8 +156,8 @@ MeshTreeNode* MeshTree::build(const ModelBody *model_body, std::vector<MeshTrian
 		return node;
 	}
 
-	node->left = build(model_body, leftTriangles, depth + 1);
-	node->right = build(model_body, rightTriangles, depth + 1);
+	node->left = build(mesh, leftTriangles, mat, depth + 1);
+	node->right = build(mesh, rightTriangles, mat, depth + 1);
 	
 	return node;
 }

@@ -19,10 +19,12 @@ namespace _462 {
 
 #define MAX_TREE_DEPTH 50
 
+class ModelBody;
+
 class MeshTreeNode{
 public:
 	MeshTreeNode();
-	MeshTreeNode(const ModelBody *model_body, std::vector<MeshTriangle> triangles);
+	MeshTreeNode(const Mesh* mesh, std::vector<MeshTriangle> triangles, Matrix4 mat);
 	~MeshTreeNode();
 
 	Bound* bbox;
@@ -32,9 +34,9 @@ public:
 	std::vector<MeshTriangle> triangles;
 
 	// get a bounding box surrounding all the triangles
-	Bound* createBBox(const ModelBody *model_body);
+	Bound* createBBox(const Mesh* mesh, Matrix4 mat);
 	// get a bounding box from triangle
-	Bound createTriangleBound(const ModelBody *model_body, MeshTriangle triangle);
+	Bound createTriangleBound(const Mesh* mesh, MeshTriangle triangle, Matrix4 mat);
 };
 
 class MeshTree{
@@ -42,18 +44,18 @@ public:
 	MeshTreeNode* root;
 
 	MeshTree();
-	MeshTree(const ModelBody *model_body);
+	MeshTree(const Mesh *mesh, Matrix4 mat);
 	~MeshTree();
 
-	MeshTree *makeFlatTree(const ModelBody *model_body);
-	void refine(const ModelBody *model_body, MeshTree *tree);
-	MeshTree *makeRecTree(const ModelBody *model_body);
-	void refineRec(const ModelBody *model_body, MeshTree *tree);
-	Bound setBounds(const ModelBody *model_body, MeshTree *tree);
+	MeshTree *makeFlatTree(const Mesh *mesh);
+	void refine(const Mesh *mesh, MeshTree *tree);
+	MeshTree *makeRecTree(const Mesh *mesh);
+	void refineRec(const Mesh *mesh, MeshTree *tree);
+	Bound setBounds(const Mesh *mesh, MeshTree *tree);
 
 	void freeNode(MeshTreeNode* node);
-	MeshTreeNode* build(const ModelBody *model_body, std::vector<MeshTriangle> triangles, int depth);
-	Vector3 getTriangleMidPoint(const ModelBody *model_body, MeshTriangle triangle);
+	MeshTreeNode* build(const Mesh *mesh, std::vector<MeshTriangle> triangles, Matrix4 mat, int depth);
+	Vector3 getTriangleMidPoint(const Mesh *mesh, MeshTriangle triangle);
 };
 } //namespace _462
 #endif /* defined(__p4__MeshTree__) */

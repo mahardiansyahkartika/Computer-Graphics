@@ -2,7 +2,6 @@
 #ifndef _462_SCENE_BOUND_HPP_
 #define _462_SCENE_BOUND_HPP_
 #include "math/vector.hpp"
-#include "p5/spherebody.hpp"
 
 namespace _462{
     
@@ -34,8 +33,7 @@ public:
         upper.z=-INFINITY;
     }
 	
-	real_t squared_dist(Vector3 point);
-	bool collides(SphereBody* body);
+	bool collides(Vector3 position, real_t radius);
 
     real_t dim(int i){return upper[i]-lower[i];}
     void assertIn(Vector3 other){

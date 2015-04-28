@@ -19,6 +19,15 @@ Triangle::Triangle()
 
 Triangle::~Triangle() { }
 
+bool Triangle::initialize(){
+	Geometry::initialize();
+
+	// create bounding box
+	boundBox = createBoundingBox();
+
+	return true;
+}
+
 void Triangle::render() const
 {
     bool materials_nonnull = true;
@@ -49,6 +58,21 @@ void Triangle::render() const
         vertices[0].material->reset_gl_state();
 }
 
+Bound Triangle::createBoundingBox() {
+	Vector3 min = vertices[0].position;
+	Vector3 max = vertices[0].position;
+
+	for (int i = 1; i < 3; ++i) {
+		if (vertices[i].position.x < min.x) min.x = vertices[i].position.x;
+		if (vertices[i].position.y < min.y) min.y = vertices[i].position.y;
+		if (vertices[i].position.z < min.z) min.z = vertices[i].position.z;
+		if (vertices[i].position.x > max.x) max.x = vertices[i].position.x;
+		if (vertices[i].position.y > max.y) max.y = vertices[i].position.y;
+		if (vertices[i].position.z > max.z) max.z = vertices[i].position.z;
+	}
+
+	return Bound(min, max);
+}
 
 } /* _462 */
 

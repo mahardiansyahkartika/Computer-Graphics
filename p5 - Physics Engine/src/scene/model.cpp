@@ -9,6 +9,7 @@
 #include "application/opengl.hpp"
 #include "scene/model.hpp"
 #include "scene/material.hpp"
+#include "scene/meshtree.hpp"
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -19,7 +20,20 @@
 namespace _462 {
 
 Model::Model() : mesh( 0 ), material( 0 ) { }
-Model::~Model() { }
+Model::~Model() { 
+	delete tree;
+}
+
+bool Model::initialize(){
+	Geometry::initialize();
+
+	// create tree
+	std::cout << "Start creating Tree" << std::endl;
+	tree = new MeshTree(mesh, mat);
+	std::cout << "Done creating Tree" << std::endl;
+
+	return true;
+}
 
 void Model::render() const
 {
@@ -31,7 +45,6 @@ void Model::render() const
     if ( material )
         material->reset_gl_state();
 }
-
 
 } /* _462 */
 

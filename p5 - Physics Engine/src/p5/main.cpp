@@ -119,6 +119,12 @@ bool PhysicsApplication::initialize()
         return false;
     }
 
+	// initialize all geometries
+	for (size_t i = 0; i < scene.num_geometries(); ++i) {
+		Geometry* const* geometries = scene.get_geometries();
+		geometries[i]->initialize();
+	}
+
     // set the gl state
     if ( load_gl ) {
         float arr[4];
@@ -422,10 +428,6 @@ static bool parse_args( Options* opt, int argc, char* argv[] )
 
 int main( int argc, char* argv[] )
 {
-	argc = 2;
-	argv = new char*[argc];
-	argv[1] = "scenes/collision.scene";
-
     Options opt;
 
     Matrix3 mat;

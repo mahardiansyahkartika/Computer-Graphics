@@ -35,7 +35,7 @@ public:
     Vector3 velocity;
     Vector3 angular_velocity;
 
-	Bound* bound;
+	Bound bound;
 
     virtual ~Body() { }
     virtual Vector3 step_position( real_t dt, real_t motion_damping ) = 0;

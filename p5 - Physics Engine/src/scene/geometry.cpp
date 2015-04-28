@@ -17,7 +17,7 @@ bool Geometry::initialize()
 	make_inverse_transformation_matrix(&invMat, position, orientation, scale);
 	make_transformation_matrix(&mat, position, orientation, scale);
 	make_normal_matrix(&normMat, mat);
-
+	
 	return true;
 }
 

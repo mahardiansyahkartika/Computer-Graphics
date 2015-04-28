@@ -1,36 +1,35 @@
 #include "scene/bound.hpp"
 namespace _462{
 
-real_t Bound::squared_dist(Vector3 point) {
-	auto check = [&](const real_t pn, const real_t bmin, const real_t bmax) -> real_t {
-		real_t out = 0;
-		real_t v = pn;
+bool Bound::collides(Vector3 position, real_t radius) {
+	real_t dmin = 0;
 
-		if (v < bmin) {
-			real_t val = (bmin - v);
-			out += val * val;
-		}
+	Vector3 center = position;
+	Vector3 bmin = lower;
+	Vector3 bmax = upper;
 
-		if (v > bmax) {
-			real_t val = (v - bmax);
-			out += val * val;
-		}
+	if (center.x < bmin.x) {
+		dmin += pow(center.x - bmin.x, 2);
+	}
+	else if (center.x > bmax.x) {
+		dmin += pow(center.x - bmax.x, 2);
+	}
 
-		return out;
-	};
+	if (center.y < bmin.y) {
+		dmin += pow(center.y - bmin.y, 2);
+	}
+	else if (center.y > bmax.y) {
+		dmin += pow(center.y - bmax.y, 2);
+	}
 
-	// Squared distance
-	real_t sq = 0.0;
+	if (center.z < bmin.z) {
+		dmin += pow(center.z - bmin.z, 2);
+	}
+	else if (center.z > bmax.z) {
+		dmin += pow(center.z - bmax.z, 2);
+	}
 
-	sq += check(point.x, lower.x, upper.x);
-	sq += check(point.y, lower.y, upper.y);
-	sq += check(point.z, lower.z, upper.z);
-
-	return sq;
-}
-
-bool Bound::collides(SphereBody* body) {
-	return	squared_dist(body->position) <= body->radius * body->radius;
+	return dmin <= pow(radius, 2);
 }
 
 int Bound::longestAxis() {

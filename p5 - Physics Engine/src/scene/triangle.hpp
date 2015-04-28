@@ -10,6 +10,7 @@
 
 #include "scene/material.hpp"
 #include "scene/geometry.hpp"
+#include "scene/bound.hpp"
 
 namespace _462 {
 
@@ -40,7 +41,10 @@ public:
     Triangle();
     virtual ~Triangle();
     virtual void render() const;
-
+	
+	virtual bool initialize();
+	Bound boundBox;
+	Bound createBoundingBox();
 };
 
 

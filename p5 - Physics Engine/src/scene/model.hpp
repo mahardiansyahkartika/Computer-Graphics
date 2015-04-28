@@ -11,13 +11,16 @@
 #include "scene/material.hpp"
 #include "scene/geometry.hpp"
 #include "scene/mesh.hpp"
-#include "scene/meshtree.hpp"
+#include "scene/bound.hpp"
 
 namespace _462 {
 
 /**
  * A mesh of triangles.
  */
+
+class MeshTree;
+
 class Model : public Geometry
 {
 public:
@@ -30,7 +33,7 @@ public:
     virtual ~Model();
 
     virtual void render() const;
-
+	virtual bool initialize();
 };
 
 
