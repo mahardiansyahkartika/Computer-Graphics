@@ -49,7 +49,7 @@ public:
 	Derivative evaluate(SphereBody* body, const State &initial, float dt, const Derivative &d);
 	void apply_forces(SphereBody* body, const State &initial);
 	Quaternion add_quaternion(Quaternion first_orientation, Vector3 delta_orientation);
-private:
+
     typedef std::vector< Spring* > SpringList;
     typedef std::vector< SphereBody* > SphereList;
     typedef std::vector< PlaneBody* > PlaneList;
@@ -61,6 +61,8 @@ private:
     PlaneList planes;
     TriangleList triangles;
     ModelList models;
+
+private:
 };
 
 }

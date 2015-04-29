@@ -1,2 +1,2 @@
 add_library(application application.cpp camera_roam.cpp imageio.cpp
-            scene_loader.cpp)
+            pool_controller.cpp scene_loader.cpp)

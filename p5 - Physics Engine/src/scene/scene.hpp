@@ -17,6 +17,7 @@
 #include "p5/physics.hpp"
 #include "scene/mesh.hpp"
 #include "scene/geometry.hpp"
+#include "application/pool_controller.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -61,6 +62,8 @@ public:
     Color3 ambient_light;
     /// the refraction index of air
     real_t refractive_index;
+	/// pool controller
+	PoolController pool_controller;
 
     /// Creates a new empty scene.
     Scene();
@@ -90,9 +93,9 @@ public:
     void add_mesh( Mesh* m );
     void add_light( const PointLight& l );
 
+	void initialize(const char* input_filename);
     void update( real_t dt );
-
-private:
+	void handle_event(const SDL_Event& event);
 
     typedef std::vector< PointLight > PointLightList;
     typedef std::vector< Material* > MaterialList;
@@ -111,6 +114,7 @@ private:
     Physics phys;
 
 private:
+	bool is_pool = false;
 
     // no meaningful assignment or copy
     Scene(const Scene&);

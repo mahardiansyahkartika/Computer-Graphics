@@ -97,10 +97,20 @@ void Scene::reset()
 
     phys = Physics();
     camera = Camera();
+	pool_controller = PoolController();
 
     background_color = Color3::Black();
     ambient_light = Color3::Black();
     refractive_index = 1.0;
+}
+
+void Scene::initialize(const char* input_filename) {
+	if (!strcmp(input_filename, "scenes/pool.scene")) {
+		is_pool = true;
+		
+		// initialize pool controller
+		pool_controller.initialize(this);
+	}
 }
 
 void Scene::add_geometry( Geometry* g )
@@ -126,8 +136,13 @@ void Scene::add_light( const PointLight& l )
 void Scene::update( real_t dt )
 {
     phys.step( dt ); 
+	pool_controller.update( dt, is_pool );
 }
 
+void Scene::handle_event(const SDL_Event& event)
+{
+	pool_controller.handle_event( event, is_pool );
+}
 
 } /* _462 */
 

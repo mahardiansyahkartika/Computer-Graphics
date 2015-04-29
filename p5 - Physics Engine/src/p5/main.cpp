@@ -89,6 +89,7 @@ bool PhysicsApplication::initialize()
 {
     // copy camera into camera control so it can be moved via mouse
     camera_control.camera = scene.camera;
+
     bool load_gl = options.open_window;
     pause = false;
     speed = 1.0;
@@ -124,6 +125,9 @@ bool PhysicsApplication::initialize()
 		Geometry* const* geometries = scene.get_geometries();
 		geometries[i]->initialize();
 	}
+
+	// initialize pool_controller
+	scene.initialize(options.input_filename);
 
     // set the gl state
     if ( load_gl ) {
@@ -209,6 +213,7 @@ void PhysicsApplication::render()
 void PhysicsApplication::handle_event( const SDL_Event& event )
 {
     camera_control.handle_event( this, event );
+	scene.handle_event( event );
 
     switch ( event.type )
     {
