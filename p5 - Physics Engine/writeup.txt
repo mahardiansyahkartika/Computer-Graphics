@@ -3,7 +3,32 @@ if you have missing features, be sure to explain how much you accomplished.
 Describe any major design decisions and descriptions of your algorithms.
 You should detail anything you think we need to know to understand your code.
 
-Implemented all Checkpoints
-+ All necessary collision detection functions.
-+ Simple integrator which allow motion and collision to be displayed visually
-+ Acceleration due to gravity
+Implemented all features
++ Implement collisions between spheres and other spheres, triangles, planes, and models.
++ Implement simulation of both velocity and angular velocity for spheres along with force and torque.
++ Use Runge-Kutta 4th Order to integrate bodies.
++ Program the spring interactions between bodies.
++ Add gravity.
++ Implement collision damping and spring damping.
++ Implement bounding volumes for objects and a bounding volume hierarchy.
+	I implemented KD Trees for Model geometry
+	to build a tree, start from root which contains all the triangles of model and bounding box surrounding a whole thing.
+	at each level down the trees, I split the tree depends on the longest axis. Here the order of the process
+	1. Find middle point of all the triangles in node
+	2. Find the longest axis of the bounding box for that node.
+	3. For each triangle in the node, check whether, for the current axis, it is less than or greater than the overall midpoint
+		– if less than, push the triangle to the left child
+		– if greater than, push the triangle to the right child
+	4. They will stop the recursion if the node cannot split to be smaller (e.g. contain 1 triangle) or if the depth of the tree has reached certain number
+		right now, I limited the depth of the tree by 50. You can change the value in meshtree.hpp
+		#define MAX_TREE_DEPTH 50
+		
+Extra Credit
++ Implement a Pool game on top of physics engine.
+	There will be a black arrow inside cue ball. You can shoot if black arrow show.
+	control keys:
+	'o': shoot cue ball with different power depends on how long you press the 'o' key (arrow will be longer to show how much power you give to the ball)
+	'k': rotate black arrow to left
+	'l': rotate black arrow to right
+	
+	There is no win or lose condition and there is no restart. If your cue ball fall down, you have to re-run the application.
