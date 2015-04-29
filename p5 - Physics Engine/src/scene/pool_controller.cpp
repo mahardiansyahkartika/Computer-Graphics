@@ -6,7 +6,7 @@
  * @author Eric Butler (edbutler)
  */
 
-#include "application/pool_controller.hpp"
+#include "scene/pool_controller.hpp"
 #include "scene/scene.hpp"
 
 namespace _462 {

@@ -17,7 +17,7 @@
 #include "p5/physics.hpp"
 #include "scene/mesh.hpp"
 #include "scene/geometry.hpp"
-#include "application/pool_controller.hpp"
+#include "scene/pool_controller.hpp"
 #include <string>
 #include <vector>
 #include <map>
